@@ -39,6 +39,7 @@ class Suggestion {
   deDuplicate = true;
   // The tab represented by this suggestion. Populated by TabCompleter.
   tabId;
+  windowId;
   // Whether this is a suggestion provided by a user's custom search engine.
   isCustomSearch;
   // Whether this is meant to be the first suggestion from the user's custom search engine which
@@ -254,7 +255,7 @@ const ignoredTopLevelBookmarks = {
 
 // this.bookmarks are loaded asynchronously when refresh() is called.
 class BookmarkCompleter {
-  async filter({ queryTerms }) {
+  async filter({ queryTerms, completerName }) {
     if (!this.bookmarks) await this.refresh();
 
     // If the folder separator character is the first character in any query term, then use the
@@ -264,7 +265,7 @@ class BookmarkCompleter {
       (prev, term) => prev || term.startsWith(folderSeparator),
       false,
     );
-    if (queryTerms.length > 0) {
+    if (completerName == "bookmarks" || queryTerms.length > 0) {
       results = this.bookmarks.filter((bookmark) => {
         const suggestionTitle = usePathAndTitle ? bookmark.pathAndTitle : bookmark.title;
         if (bookmark.hasJavascriptPrefix == null) {
@@ -477,8 +478,8 @@ class DomainCompleter {
 
 // Searches through all open tabs, matching on title and URL.
 class TabCompleter {
-  async filter({ queryTerms }) {
-    if (queryTerms.length == 0) return [];
+  async filter({ queryTerms, completerName }) {
+    if (completerName != "tabs" && queryTerms.length == 0) return [];
 
     // NOTE(philc): We search all tabs, not just those in the current window. I'm not sure if this
     // is the correct UX.
@@ -515,6 +516,59 @@ class TabCompleter {
       return RankingUtils.wordRelevancy(suggestion.queryTerms, suggestion.url, suggestion.title);
     } else {
       return BgUtils.tabRecency.recencyScore(suggestion.tabId);
+    }
+  }
+}
+
+// Searches through all windows, matching on title and URL.
+class WindowCompleter {
+  async filter({ queryTerms, completerName }) {
+    if (completerName != "windows" && queryTerms.length === 0) return [];
+
+    const windows = await chrome.windows.getAll({ populate: true, windowTypes: ["normal"] });
+    const currentTab = (await chrome.tabs.query({ currentWindow: true, active: true }))[0];
+    const activeTabs = windows
+      .filter((window) =>
+        currentTab.windowId !== window.id && currentTab.incognito === window.incognito
+      )
+      .map((window) => window.tabs.find((tab) => tab.active));
+    const results = activeTabs.filter((tab) =>
+      RankingUtils.matches(queryTerms, tab.url, tab.title)
+    );
+    const suggestions = results
+      .map((tab) => {
+        const suggestion = new Suggestion({
+          queryTerms,
+          description: "window",
+          url: tab.url,
+          title: tab.title,
+          tabId: currentTab.id,
+          windowId: tab.windowId,
+          deDuplicate: false,
+        });
+        suggestion.relevancy = this.computeRelevancy(suggestion);
+        return suggestion;
+      })
+      .sort((a, b) => b.relevancy - a.relevancy);
+    // Boost relevancy with a multiplier so a relevant tab doesn't
+    // prevent tabs from crowding out everything else in turn,
+    // penalize them for being further down the results list by
+    // scaling on a hyperbola starting at 1 and approaching 0
+    // asymptotically for higher indexes. The multiplier and the
+    // curve fall-off were objectively chosen on the grounds that
+    // they seem to work pretty well.
+    suggestions.forEach(function (suggestion, i) {
+      suggestion.relevancy *= 8;
+      suggestion.relevancy /= (i / 4) + 1;
+    });
+    return suggestions;
+  }
+
+  computeRelevancy(suggestion) {
+    if (suggestion.queryTerms.length) {
+      return RankingUtils.wordRelevancy(suggestion.queryTerms, suggestion.url, suggestion.title);
+    } else {
+      return BgUtils.tabRecency.recencyScore(suggestion.windowId);
     }
   }
 }
@@ -644,6 +698,7 @@ class MultiCompleter {
 
   // Rank them, simplify the URLs, and de-duplicate suggestions with the same simplified URL.
   postProcessSuggestions(request, queryTerms, suggestions) {
+    suggestions = suggestions.filter(Boolean);
     for (const s of suggestions) {
       s.computeRelevancy(queryTerms);
     }
@@ -959,6 +1014,7 @@ Object.assign(globalThis, {
   HistoryCompleter,
   DomainCompleter,
   TabCompleter,
+  WindowCompleter,
   SearchEngineCompleter,
   HistoryCache,
   RankingUtils,

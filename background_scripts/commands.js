@@ -296,6 +296,8 @@ const Commands = {
       "scrollToRight",
       "reload",
       "copyCurrentUrl",
+      "copyCurrentTitle",
+      "copyCurrentMDLink",
       "openCopiedUrlInCurrentTab",
       "openCopiedUrlInNewTab",
       "goUp",
@@ -327,6 +329,9 @@ const Commands = {
       "Vomnibar.activateTabSelection",
       "Vomnibar.activateEditUrl",
       "Vomnibar.activateEditUrlInNewTab",
+      "Vomnibar.moveTabToWindow",
+      "vomnibarWithSelection",
+      "vomnibarWithSelectionInNewTab",
     ],
     findCommands: ["enterFindMode", "performFind", "performBackwardsFind"],
     historyNavigation: ["goBack", "goForward"],
@@ -343,11 +348,15 @@ const Commands = {
       "removeTab",
       "restoreTab",
       "moveTabToNewWindow",
+      "openTabInIncognito",
       "closeTabsOnLeft",
       "closeTabsOnRight",
       "closeOtherTabs",
       "moveTabLeft",
       "moveTabRight",
+      "suspendTab",
+      "suspendAllTabs",
+      "unsuspendAllTabs",
     ],
     misc: ["showHelp", "toggleViewSource"],
   },
@@ -379,6 +388,9 @@ const Commands = {
     "enterVisualLineMode",
     "toggleViewSource",
     "passNextKey",
+    "suspendTab",
+    "suspendAllTabs",
+    "unsuspendAllTabs",
   ],
 };
 
@@ -398,6 +410,8 @@ const defaultKeyMappings = {
   "u": "scrollPageUp",
   "r": "reload",
   "yy": "copyCurrentUrl",
+  "yY": "copyCurrentTitle",
+  "ym": "copyCurrentMDLink",
   "p": "openCopiedUrlInCurrentTab",
   "P": "openCopiedUrlInNewTab",
   "gi": "focusInput",
@@ -430,6 +444,7 @@ const defaultKeyMappings = {
   "B": "Vomnibar.activateBookmarksInNewTab",
   "ge": "Vomnibar.activateEditUrl",
   "gE": "Vomnibar.activateEditUrlInNewTab",
+  "gw": "Vomnibar.moveTabToWindow",
 
   // Navigating history
   "H": "goBack",
@@ -486,8 +501,11 @@ const commandDescriptions = {
   toggleViewSource: ["View page source", { noRepeat: true }],
 
   copyCurrentUrl: ["Copy the current URL to the clipboard", { noRepeat: true }],
+  copyCurrentTitle: ["Copy the current Title to the clipboard", { noRepeat: true }],
+  copyCurrentMDLink: ["Copy the markdown link to the clipboard", { noRepeat: true }],
   openCopiedUrlInCurrentTab: ["Open the clipboard's URL in the current tab", { noRepeat: true }],
   openCopiedUrlInNewTab: ["Open the clipboard's URL in a new tab", { repeatLimit: 20 }],
+  openTabInIncognito: ["Open tab in incognito window"],
 
   enterInsertMode: ["Enter insert mode", { noRepeat: true }],
   passNextKey: ["Pass the next key to the page"],
@@ -501,7 +519,7 @@ const commandDescriptions = {
   "LinkHints.activateModeToOpenInNewForegroundTab": ["Open a link in a new tab & switch to it"],
   "LinkHints.activateModeWithQueue": ["Open multiple links in a new tab", { noRepeat: true }],
   "LinkHints.activateModeToOpenIncognito": ["Open a link in incognito window"],
-  "LinkHints.activateModeToDownloadLink": ["Download link url"],
+  "LinkHints.activateModeToDownloadLink": ["Download link URL"],
   "LinkHints.activateModeToCopyLinkUrl": ["Copy a link URL to the clipboard"],
 
   enterFindMode: ["Enter find mode", { noRepeat: true }],
@@ -544,6 +562,9 @@ const commandDescriptions = {
 
   moveTabLeft: ["Move tab to the left", { background: true }],
   moveTabRight: ["Move tab to the right", { background: true }],
+  suspendTab: ["Suspend tab", { noRepeat: true }],
+  suspendAllTabs: ["Suspend all tabs in this window", { noRepeat: true }],
+  unsuspendAllTabs: ["Unsuspend all tabs in this window", { noRepeat: true }],
 
   "Vomnibar.activate": ["Open URL, bookmark or history entry", { topFrame: true }],
   "Vomnibar.activateInNewTab": ["Open URL, bookmark or history entry in a new tab", {
@@ -556,6 +577,9 @@ const commandDescriptions = {
   "Vomnibar.activateEditUrlInNewTab": ["Edit the current URL and open in a new tab", {
     topFrame: true,
   }],
+  "Vomnibar.moveTabToWindow": ["Move current tab to an existing window", { topFrame: true }],
+  "vomnibarWithSelection": ["Open vomnibar with selection", { topFrame: true }],
+  "vomnibarWithSelectionInNewTab": ["Open vomnibar with selection in new tab", { topFrame: true }],
 
   nextFrame: ["Select the next frame on the page", { background: true }],
   mainFrame: ["Select the page's main/top frame", { topFrame: true, noRepeat: true }],

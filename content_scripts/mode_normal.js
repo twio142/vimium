@@ -164,6 +164,32 @@ const NormalModeCommands = {
     });
   },
 
+  copyCurrentTitle() {
+    chrome.runtime.sendMessage(
+      { handler: "getCurrentTabTitle" },
+      function (title) {
+        HUD.copyToClipboard(title);
+        if (28 < title.length) {
+          title = title.slice(0, 26) + "....";
+        }
+        HUD.show(`Yanked ${title}`, 2000);
+      },
+    );
+  },
+
+  copyCurrentMDLink() {
+    chrome.runtime.sendMessage(
+      { handler: "getCurrentTabMDLink" },
+      function (link) {
+        HUD.copyToClipboard(link);
+        if (28 < link.length) {
+          link = link.slice(0, 26) + "....";
+        }
+        HUD.show(`Yanked ${link}`, 2000);
+      },
+    );
+  },
+
   openCopiedUrlInNewTab(count) {
     HUD.pasteFromClipboard((url) =>
       chrome.runtime.sendMessage({ handler: "openUrlInNewTab", url, count })
@@ -173,6 +199,37 @@ const NormalModeCommands = {
   openCopiedUrlInCurrentTab() {
     HUD.pasteFromClipboard((url) =>
       chrome.runtime.sendMessage({ handler: "openUrlInCurrentTab", url })
+    );
+  },
+
+  openTabInIncognito() {
+    chrome.runtime.sendMessage({ handler: "openTabInIncognito" });
+  },
+
+  suspendTab() {
+    chrome.runtime.sendMessage(
+      { handler: "callTabSuspender", message: "suspend-tab" },
+      function () {
+        HUD.show(`Suspended tab`, 2000);
+      },
+    );
+  },
+
+  suspendAllTabs() {
+    chrome.runtime.sendMessage(
+      { handler: "callTabSuspender", message: "suspend-active-window" },
+      function () {
+        HUD.show(`Suspended all tabs`, 2000);
+      },
+    );
+  },
+
+  unsuspendAllTabs() {
+    chrome.runtime.sendMessage(
+      { handler: "callTabSuspender", message: "unsuspend-active-window" },
+      function () {
+        HUD.show(`Unsuspended all tabs`, 2000);
+      },
     );
   },
 
@@ -317,6 +374,18 @@ const NormalModeCommands = {
 
     return new FocusSelector(hints, visibleInputs, selectedInputIndex);
   },
+
+  vomnibarWithSelection() {
+    let selection = window.getSelection().toString();
+    selection = selection ? " " + selection : "";
+    return Vomnibar.open(null, { query: selection, cursorAtStart: true });
+  },
+
+  vomnibarWithSelectionInNewTab() {
+    let selection = window.getSelection().toString();
+    selection = selection ? " " + selection : "";
+    return Vomnibar.open(null, { query: selection, newTab: true, cursorAtStart: true });
+  },
 };
 
 if (typeof LinkHints !== "undefined") {
@@ -341,6 +410,7 @@ if (typeof Vomnibar !== "undefined") {
     "Vomnibar.activateBookmarksInNewTab": Vomnibar.activateBookmarksInNewTab.bind(Vomnibar),
     "Vomnibar.activateEditUrl": Vomnibar.activateEditUrl.bind(Vomnibar),
     "Vomnibar.activateEditUrlInNewTab": Vomnibar.activateEditUrlInNewTab.bind(Vomnibar),
+    "Vomnibar.moveTabToWindow": Vomnibar.moveTabToWindow.bind(Vomnibar),
   });
 }
 

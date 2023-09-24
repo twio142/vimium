@@ -105,18 +105,6 @@ const COPY_LINK_URL = {
     }
   },
 };
-const OPEN_INCOGNITO = {
-  name: "incognito",
-  indicator: "Open link in incognito window",
-  linkActivator(link) {
-    chrome.runtime.sendMessage({ handler: "openUrlInIncognito", url: link.href });
-  },
-};
-const DOWNLOAD_LINK_URL = {
-  name: "download",
-  indicator: "Download link URL",
-  clickModifiers: { altKey: true, ctrlKey: false, metaKey: false },
-};
 const COPY_LINK_TEXT = {
   name: "copy-link-text",
   indicator: "Copy link text",
@@ -129,6 +117,75 @@ const COPY_LINK_TEXT = {
     } else {
       HUD.show("No text to yank.", 2000);
     }
+  },
+};
+const COPY_LINK_MD_URL = {
+  name: "copy-link-md-url",
+  indicator: "Copy link markdown URL",
+  linkActivator(link) {
+    if (link.href != null) {
+      let text = `[${link.textContent.trim()}](${link.href})`;
+      HUD.copyToClipboard(text);
+      if (28 < text.length) {
+        text = text.slice(0, 26) + "....";
+      }
+      HUD.showForDuration(`Yanked ${text}`, 2000);
+    } else {
+      HUD.showForDuration("No link to yank.", 2000);
+    }
+  },
+};
+const PASTE_IN_CURRENT_TAB = {
+  name: "paste-curr",
+  indicator: "Paste link in current tab",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInCurrentTab",
+        url: link.href,
+      });
+  },
+};
+const PASTE_IN_NEW_TAB = {
+  name: "paste-new",
+  indicator: "Paste link in new tab",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInNewTab",
+        url: link.href,
+      });
+  },
+};
+const PASTE_IN_NEW_BG_TAB = {
+  name: "paste-new-bg",
+  indicator: "Paste link in new background tab",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInNewTab",
+        url: link.href,
+        active: false,
+      });
+  },
+};
+const OPEN_INCOGNITO = {
+  name: "incognito",
+  indicator: "Open link in incognito window",
+  linkActivator(link) {
+    chrome.runtime.sendMessage({ handler: "openUrlInIncognito", url: link.href });
+  },
+};
+const DOWNLOAD_LINK_URL = {
+  name: "download",
+  indicator: "Download link URL",
+  // clickModifiers: { altKey: true, ctrlKey: false, metaKey: false },
+  linkActivator(link, options) {
+    chrome.runtime.sendMessage({
+      handler: "downloadUrl",
+      url: link.href,
+      options: options,
+    });
   },
 };
 const HOVER_LINK = {
@@ -152,9 +209,13 @@ const availableModes = [
   OPEN_IN_NEW_FG_TAB,
   OPEN_WITH_QUEUE,
   COPY_LINK_URL,
+  COPY_LINK_TEXT,
+  COPY_LINK_MD_URL,
+  PASTE_IN_CURRENT_TAB,
+  PASTE_IN_NEW_TAB,
+  PASTE_IN_NEW_BG_TAB,
   OPEN_INCOGNITO,
   DOWNLOAD_LINK_URL,
-  COPY_LINK_TEXT,
   HOVER_LINK,
   FOCUS_LINK,
 ];
@@ -215,7 +276,15 @@ const HintCoordinator = {
   getHintDescriptors({ modeIndex, isVimiumHelpDialog }, _sender) {
     if (!DomUtils.isReady() || DomUtils.windowIsTooSmall()) return [];
 
-    const requireHref = [COPY_LINK_URL, OPEN_INCOGNITO].includes(availableModes[modeIndex]);
+    const requireHref = [
+      COPY_LINK_URL,
+      COPY_LINK_TEXT,
+      COPY_LINK_MD_URL,
+      PASTE_IN_CURRENT_TAB,
+      PASTE_IN_NEW_TAB,
+      PASTE_IN_NEW_BG_TAB,
+      OPEN_INCOGNITO,
+    ].includes(availableModes[modeIndex]);
     // If link hints is launched within the help dialog, then we only offer hints from that frame.
     // This improves the usability of the help dialog on the options page (particularly for
     // selecting command names).
@@ -301,13 +370,20 @@ const LinkHints = {
       case "copy-text":
         mode = COPY_LINK_TEXT;
         break;
+      case "copy-md-url":
+        mode = COPY_LINK_MD_URL;
+        break;
       case "hover":
         mode = HOVER_LINK;
         break;
       case "focus":
         mode = FOCUS_LINK;
         break;
+      case "paste":
+        mode = PASTE_IN_CURRENT_TAB;
+        break;
     }
+    mode.options = registryEntry?.options;
 
     if ((count > 0) || (mode === OPEN_WITH_QUEUE)) {
       HintCoordinator.prepareToActivateMode(mode, function (isSuccess) {
@@ -326,8 +402,8 @@ const LinkHints = {
   activateModeToOpenInNewForegroundTab(count) {
     this.activateMode(count, { mode: OPEN_IN_NEW_FG_TAB });
   },
-  activateModeToCopyLinkUrl(count) {
-    this.activateMode(count, { mode: COPY_LINK_URL });
+  activateModeToCopyLinkUrl(count, { registryEntry }) {
+    this.activateMode(count, { mode: COPY_LINK_URL, registryEntry });
   },
   activateModeWithQueue() {
     this.activateMode(1, { mode: OPEN_WITH_QUEUE });
@@ -335,8 +411,8 @@ const LinkHints = {
   activateModeToOpenIncognito(count) {
     this.activateMode(count, { mode: OPEN_INCOGNITO });
   },
-  activateModeToDownloadLink(count) {
-    this.activateMode(count, { mode: DOWNLOAD_LINK_URL });
+  activateModeToDownloadLink(count, { registryEntry }) {
+    this.activateMode(count, { mode: DOWNLOAD_LINK_URL, registryEntry });
   },
 };
 
@@ -466,9 +542,20 @@ class LinkHintsMode {
     // NOTE(smblott) The modifier behaviour here applies only to alphabet hints.
     if (
       ["Control", "Shift"].includes(event.key) && !Settings.get("filterLinkHints") &&
-      [OPEN_IN_CURRENT_TAB, OPEN_WITH_QUEUE, OPEN_IN_NEW_BG_TAB, OPEN_IN_NEW_FG_TAB].includes(
-        this.mode,
-      )
+      [
+        COPY_LINK_URL,
+        COPY_LINK_TEXT,
+        COPY_LINK_MD_URL,
+        OPEN_IN_CURRENT_TAB,
+        OPEN_WITH_QUEUE,
+        OPEN_IN_NEW_BG_TAB,
+        OPEN_IN_NEW_FG_TAB,
+        HOVER_LINK,
+        FOCUS_LINK,
+        PASTE_IN_CURRENT_TAB,
+        PASTE_IN_NEW_TAB,
+        PASTE_IN_NEW_BG_TAB,
+      ].includes(this.mode)
     ) {
       // Toggle whether to open the link in a new or current tab.
       const previousMode = this.mode;
@@ -476,14 +563,64 @@ class LinkHintsMode {
 
       switch (key) {
         case "Shift":
-          this.setOpenLinkMode(
-            this.mode === OPEN_IN_CURRENT_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_CURRENT_TAB,
-          );
+          if (
+            [
+              COPY_LINK_URL,
+              COPY_LINK_TEXT,
+              COPY_LINK_MD_URL,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(this.mode === COPY_LINK_URL ? COPY_LINK_TEXT : COPY_LINK_URL);
+          } else if (
+            [
+              OPEN_IN_CURRENT_TAB,
+              OPEN_WITH_QUEUE,
+              OPEN_IN_NEW_BG_TAB,
+              OPEN_IN_NEW_FG_TAB,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === OPEN_IN_CURRENT_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_CURRENT_TAB,
+            );
+          } else if ([HOVER_LINK, FOCUS_LINK].includes(this.mode)) {
+            this.setOpenLinkMode(this.mode === HOVER_LINK ? FOCUS_LINK : HOVER_LINK);
+          } else if (
+            [PASTE_IN_CURRENT_TAB, PASTE_IN_NEW_TAB, PASTE_IN_NEW_BG_TAB].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === PASTE_IN_CURRENT_TAB ? PASTE_IN_NEW_BG_TAB : PASTE_IN_CURRENT_TAB,
+            );
+          }
           break;
         case "Control":
-          this.setOpenLinkMode(
-            this.mode === OPEN_IN_NEW_FG_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_NEW_FG_TAB,
-          );
+          if (
+            [
+              COPY_LINK_URL,
+              COPY_LINK_TEXT,
+              COPY_LINK_MD_URL,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === COPY_LINK_MD_URL ? COPY_LINK_TEXT : COPY_LINK_MD_URL,
+            );
+          } else if (
+            [
+              OPEN_IN_CURRENT_TAB,
+              OPEN_WITH_QUEUE,
+              OPEN_IN_NEW_BG_TAB,
+              OPEN_IN_NEW_FG_TAB,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === OPEN_IN_NEW_FG_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_NEW_FG_TAB,
+            );
+          } else if (
+            [PASTE_IN_CURRENT_TAB, PASTE_IN_NEW_TAB, PASTE_IN_NEW_BG_TAB].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === PASTE_IN_NEW_TAB ? PASTE_IN_NEW_BG_TAB : PASTE_IN_NEW_TAB,
+            );
+          }
           break;
       }
 
@@ -702,7 +839,7 @@ class LinkHintsMode {
             if (["input", "select", "object", "embed"].includes(clickEl.nodeName.toLowerCase())) {
               clickEl.focus();
             }
-            return linkActivator(clickEl);
+            return linkActivator(clickEl, this.mode.options);
           }
         }
       });

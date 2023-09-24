@@ -19,6 +19,7 @@ const Vomnibar = {
       newTab: false,
       selectFirst: false,
       keyword: null,
+      cursorAtStart: false,
     };
     Object.assign(options, userOptions);
 
@@ -30,6 +31,7 @@ const Vomnibar = {
     this.vomnibarUI.setInitialSelectionValue(options.selectFirst ? 0 : -1);
     this.vomnibarUI.setForceNewTab(options.newTab);
     this.vomnibarUI.setQuery(options.query);
+    this.vomnibarUI.moveCursorToStart(options.cursorAtStart);
     this.vomnibarUI.update();
   },
 
@@ -63,7 +65,6 @@ class VomnibarUI {
   setQuery(query) {
     this.input.value = query;
   }
-
   setInitialSelectionValue(initialSelectionValue) {
     this.initialSelectionValue = initialSelectionValue;
   }
@@ -73,6 +74,9 @@ class VomnibarUI {
   setCompleterName(name) {
     this.completerName = name;
     this.reset();
+  }
+  moveCursorToStart(cursorAtStart) {
+    if (cursorAtStart) this.input.setSelectionRange(0, 0);
   }
 
   // True if the user has entered the keyword of one of their custom search engines.
@@ -133,6 +137,7 @@ class VomnibarUI {
     for (let i = 0, end = this.completionList.children.length; i < end; i++) {
       this.completionList.children[i].className = i === this.selection ? "vomnibarSelected" : "";
     }
+    this.selection >= 0 && this.completionList.children[this.selection].scrollIntoViewIfNeeded();
   }
 
   // Returns the user's action ("up", "down", "tab", etc, or null) based on their keypress. We
@@ -149,14 +154,14 @@ class VomnibarUI {
     } else if (
       (key === "up") ||
       (event.shiftKey && (event.key === "Tab")) ||
-      (event.ctrlKey && ((key === "k") || (key === "p")))
+      (event.ctrlKey && ((key === "i") || (key === "p")))
     ) {
       return "up";
     } else if ((event.key === "Tab") && !event.shiftKey) {
       return "tab";
     } else if (
       (key === "down") ||
-      (event.ctrlKey && ((key === "j") || (key === "n")))
+      (event.ctrlKey && ((key === "k") || (key === "n")))
     ) {
       return "down";
     } else if (event.ctrlKey && (key === "enter")) {
@@ -179,6 +184,7 @@ class VomnibarUI {
       return true; // pass through
     }
 
+    const openInNewBackgroundTab = event.shiftKey;
     const openInNewTab = this.forceNewTab || event.shiftKey || event.ctrlKey || event.altKey ||
       event.metaKey;
     if (action === "dismiss") {
@@ -227,12 +233,12 @@ class VomnibarUI {
         if (isPrimarySearchSuggestion(firstCompletion)) {
           query = Utils.createSearchUrl(query, firstCompletion.searchUrl);
         }
-        this.hide(() => this.launchUrl(query, openInNewTab));
+        this.hide(() => this.launchUrl(query, openInNewTab, openInNewBackgroundTab));
       } else if (isPrimarySearchSuggestion(completion)) {
         query = Utils.createSearchUrl(query, completion.searchUrl);
-        this.hide(() => this.launchUrl(query, openInNewTab));
+        this.hide(() => this.launchUrl(query, openInNewTab, openInNewBackgroundTab));
       } else {
-        this.hide(() => this.openCompletion(completion, openInNewTab));
+        this.hide(() => this.openCompletion(completion, openInNewTab, openInNewBackgroundTab));
       }
     } else if (action === "ctrl-enter") {
       // Populate the vomnibar with the current selection's URL.
@@ -305,6 +311,18 @@ class VomnibarUI {
       Math.max(this.initialSelectionValue, this.selection),
     );
     this.updateSelection();
+    document.querySelectorAll("#vomnibar > ul > li").forEach((li) => {
+      let i = this.getSelection(li);
+      li.addEventListener("mouseenter", () => {
+        this.selection = i;
+        this.updateSelection();
+      });
+      li.addEventListener("click", () => {
+        if (li.className !== "vomnibarSelected") return;
+        let c = this.completions[i];
+        this.hide(() => this.openCompletion(c, this.forceNewTab));
+      });
+    });
   }
 
   refreshCompletions() {
@@ -343,6 +361,12 @@ class VomnibarUI {
     return this.update();
   }
 
+  getSelection(li) {
+    let i = 0;
+    while ((li = li.previousSibling)) i += 1;
+    return i;
+  }
+
   // Returns the UserSearchEngine for the given Vomnibar input. Returns null if the Vomnibar does
   // not start with a keyword from one of the user's search engines.
   getUserSearchEngineForQuery() {
@@ -361,15 +385,21 @@ class VomnibarUI {
     this.input.focus();
   }
 
-  openCompletion(completion, openInNewTab) {
+  openCompletion(completion, openInNewTab, openInNewBackgroundTab) {
     if (completion.description == "tab") {
       chrome.runtime.sendMessage({ handler: "selectSpecificTab", id: completion.tabId });
+    } else if (completion.description == "window") {
+      chrome.runtime.sendMessage({
+        handler: "moveTabToSpecificWindow",
+        tabId: completion.tabId,
+        windowId: completion.windowId,
+      });
     } else {
-      this.launchUrl(completion.url, openInNewTab);
+      this.launchUrl(completion.url, openInNewTab, openInNewBackgroundTab);
     }
   }
 
-  launchUrl(url, openInNewTab) {
+  launchUrl(url, openInNewTab, background) {
     // If the URL is a bookmarklet (so, prefixed with "javascript:"), then we always open it in the
     // current tab.
     if (openInNewTab) {
@@ -378,6 +408,7 @@ class VomnibarUI {
     chrome.runtime.sendMessage({
       handler: openInNewTab ? "openUrlInNewTab" : "openUrlInCurrentTab",
       url,
+      active: !background,
     });
   }
 

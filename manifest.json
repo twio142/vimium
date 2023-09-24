@@ -29,7 +29,8 @@
     // tabs when Vimium is first installed, and 2) inject the user's link hints CSS when a page
     // loads. This permission was required when moving to manifest V3.
     "scripting",
-    "favicon", // The favicon permission is not yet supported by Firefox.
+    // The favicon permission is not yet supported by Firefox.
+    "favicon",
     "webNavigation"
   ],
   "content_scripts": [
@@ -101,5 +102,31 @@
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "commands": {
+    "previousTab": {
+      "description": "Open the previous tab",
+      "suggested_key": {
+        "default": "Ctrl+J"
+      }
+    },
+    "nextTab": {
+      "description": "Open the next tab",
+      "suggested_key": {
+        "default": "Ctrl+L"
+      }
+    },
+    "visitPreviousTab": {
+      "description": "Go to the last visited tab"
+    },
+    "openCopiedUrlInCurrentTab": {
+      "description": "Open the copied URL in the current tab",
+      "suggested_key": {
+        "default": "Alt+P"
+      }
+    },
+    "openCopiedUrlInNewTab": {
+      "description": "Open the copied URL in a new tab"
+    }
+  }
 }

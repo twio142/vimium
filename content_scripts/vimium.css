@@ -82,15 +82,16 @@ div.internalVimiumHintMarker {
   overflow: hidden;
   font-size: 11px;
   padding: 1px 3px 0px 3px;
-  background: linear-gradient(to bottom, #FFF785 0%,#FFC542 100%);
-  border: solid 1px #C38A22;
+  /* background: linear-gradient(to bottom, #FFF785 0%,#FFC542 100%); */
+  background: #ffec42;
+  border: solid 1px #b97207;
   border-radius: 3px;
   box-shadow: 0px 3px 7px 0px rgba(0, 0, 0, 0.3);
 }
 
 div.internalVimiumHintMarker span {
   color: #302505;
-  font-family: Helvetica, Arial, sans-serif;
+  font-family: "SF Pro Display", Helvetica, Arial, sans-serif;
   font-weight: bold;
   font-size: 11px;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -311,7 +312,7 @@ div.vimiumHUD {
   width: calc(100% - 20px);
   bottom: 8px;
   left: 8px;
-  background: #F1F1F1;
+  /* background: #F1F1F1; */
   text-align: left;
   border-radius: 4px;
   box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.8);
@@ -358,8 +359,8 @@ div.vimiumHUD .vimiumHUDSearchAreaInner {
 }
 
 div.vimiumHUD .hud-find {
-  background: #fff;
-  border: 1px solid #ccc;
+  /* background: #fff; */
+  border: 1px solid transparent;
 }
 
 div.vimiumHUD span#hud-find-input, div.vimiumHUD span#hud-match-count {
@@ -404,7 +405,7 @@ iframe.vomnibarFrame {
   width: calc(80% + 20px); /* same adjustment as in pages/vomnibar.js */
   min-width: 400px;
   height: calc(100% - 70px);
-  top: 70px;
+  top: 10%;
   left: 50%;
   margin: 0 0 0 -40%;
   border: none;
@@ -514,5 +515,21 @@ iframe.vimiumNonClickable {
     border: solid 1px black;
     box-shadow: none;
     color: white;
+  }
+
+  div.vimiumHUD {
+    border-color: #555;
+  }
+
+  div.vimiumHUD .vimiumHUDSearchArea {
+    background-color: #28292C;
+  }
+
+  div.vimiumHUD .vimiumHUDSearchAreaInner {
+    color: #DDD;
+  }
+
+  div.vimiumHUD span#hud-find-input, div.vimiumHUD span#hud-match-count {
+    color: #DDD;
   }
 }

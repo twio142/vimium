@@ -62,6 +62,10 @@ class Movement {
     // Native word movements behave differently on Linux and Windows, see #1441. So we implement
     // some of them character-by-character.
     if ((granularity === vimword) && (direction === forward)) {
+      if (this.alterMethod === "move") {
+        this.selection.modify("move", forward, word);
+        return this.selection.modify("move", forward, character);
+      }
       while (this.nextCharacterIsWordCharacter()) {
         if (this.extendByOneCharacter(forward) === 0) {
           return;
@@ -79,6 +83,11 @@ class Movement {
     // As above, we implement this character-by-character to get consistent behavior on Windows and
     // Linux.
     if ((granularity === word) && (direction === forward)) {
+      if (this.alterMethod === "move") {
+        this.selection.modify("move", forward, character);
+        this.selection.modify("move", forward, word);
+        return this.selection.modify("move", backward, character);
+      }
       while (this.getNextForwardCharacter() && !this.nextCharacterIsWordCharacter()) {
         if (this.extendByOneCharacter(forward) === 0) {
           return;
@@ -295,10 +304,16 @@ class VisualMode extends KeyHandlerMode {
       _name: `${this.id}/enter/click`,
       // Yank on <Enter>.
       keypress: (event) => {
-        if (event.key === "Enter") {
-          if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-            this.yank();
+        if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+          if (event.key === "Enter") {
+            // this.yank();
+            this.shouldRetainSelectionOnExit = true;
+            this.exit();
             return this.suppressEvent;
+          } else if (event.code === "KeyO") {
+            this.shouldRetainSelectionOnExit = true;
+            this.exit();
+            return NormalModeCommands.vomnibarWithSelection();
           }
         }
         return this.continueBubbling;
@@ -410,9 +425,9 @@ class VisualMode extends KeyHandlerMode {
 // A movement can be either a string or a function.
 VisualMode.prototype.movements = {
   "l": "forward character",
-  "h": "backward character",
-  "j": "forward line",
-  "k": "backward line",
+  "j": "backward character",
+  "k": "forward line",
+  "i": "backward line",
   "e": "forward word",
   "b": "backward word",
   "w": "forward vimword",
@@ -475,6 +490,18 @@ VisualMode.prototype.movements = {
   },
   "o"() {
     return this.movement.reverseSelection();
+  },
+  "a"() {
+    document.querySelector("hypothesis-adder")?.shadowRoot.querySelector(
+      "button[aria-label*=Annotate]",
+    )?.click();
+    this.exit();
+  },
+  "h"() {
+    document.querySelector("hypothesis-adder")?.shadowRoot.querySelector(
+      "button[aria-label*=Highlight]",
+    )?.click();
+    this.exit();
   },
 };
 

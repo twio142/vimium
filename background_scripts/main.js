@@ -23,6 +23,7 @@ const completionSources = {
   history: new HistoryCompleter(),
   domains: new DomainCompleter(),
   tabs: new TabCompleter(),
+  windows: new WindowCompleter(),
   searchEngines: new SearchEngineCompleter(),
 };
 
@@ -32,10 +33,12 @@ const completers = {
     completionSources.history,
     completionSources.domains,
     completionSources.tabs,
+    completionSources.windows,
     completionSources.searchEngines,
   ]),
   bookmarks: new MultiCompleter([completionSources.bookmarks]),
   tabs: new MultiCompleter([completionSources.tabs]),
+  windows: new MultiCompleter([completionSources.windows]),
 };
 
 const onURLChange = (details) => {
@@ -135,6 +138,17 @@ const selectSpecificTab = (request) =>
     return chrome.tabs.update(request.id, { active: true });
   });
 
+//
+// Move the tab with request.tabId to the window with request.windowId
+//
+const moveTabToSpecificWindow = (request) => {
+  // must focus window first, otherwise focus will shift to address bar
+  chrome.windows.update(request.windowId, { focused: true });
+  chrome.tabs.move(request.tabId, { windowId: request.windowId, index: -1 }, (tab) => {
+    chrome.tabs.update(tab.id, { active: true });
+  });
+};
+
 const moveTab = function ({ count, tab, registryEntry }) {
   if (registryEntry.command === "moveTabLeft") {
     count = -count;
@@ -181,10 +195,9 @@ const BackgroundCommands = {
           if (newTabUrl == "pages/blank.html") {
             // "pages/blank.html" does not work in incognito mode, so fall back to "chrome://newtab"
             // instead.
-            newTabUrl =
-              request.tab.incognito
-                ? Settings.defaultOptions.newTabUrl
-                : chrome.runtime.getURL(newTabUrl);
+            newTabUrl = request.tab.incognito
+              ? Settings.defaultOptions.newTabUrl
+              : chrome.runtime.getURL(newTabUrl);
           }
           request.urls = [newTabUrl];
         }
@@ -199,7 +212,7 @@ const BackgroundCommands = {
         incognito: request.registryEntry.options.incognito || false,
       };
       await chrome.windows.create(windowConfig);
-      callback(request)
+      callback(request);
     } else {
       let openNextUrl;
       const urls = request.urls.slice().reverse();
@@ -226,13 +239,19 @@ const BackgroundCommands = {
     );
   }),
 
-  moveTabToNewWindow({ count, tab }) {
+  moveTabToNewWindow({ count, tab, registryEntry }) {
+    if (count === 1 && registryEntry.options.focused) {
+      chrome.windows.create({ type: "panel", tabId: tab.id });
+      return;
+    }
     chrome.tabs.query({ currentWindow: true }, function (tabs) {
       const activeTabIndex = tab.index;
       const startTabIndex = Math.max(0, Math.min(activeTabIndex, tabs.length - count));
       [tab, ...tabs] = tabs.slice(startTabIndex, startTabIndex + count);
       chrome.windows.create({ tabId: tab.id, incognito: tab.incognito }, function (window) {
-        chrome.tabs.move(tabs.map((t) => t.id), { windowId: window.id, index: -1 });
+        if (tabs.length) {
+          chrome.tabs.move(tabs.map((t) => t.id), { windowId: window.id, index: -1 });
+        }
       });
     });
   },
@@ -510,6 +529,12 @@ const sendRequestHandlers = {
   getCurrentTabUrl({ tab }) {
     return tab.url;
   },
+  getCurrentTabTitle({ tab }) {
+    return tab.title;
+  },
+  getCurrentTabMDLink({ tab }) {
+    return `[${tab.title || tab.url}](${tab.url})`;
+  },
   openUrlInNewTab: mkRepeatCommand((request, callback) =>
     TabOperations.openUrlInNewTab(request, callback)
   ),
@@ -518,6 +543,23 @@ const sendRequestHandlers = {
   },
   openUrlInIncognito(request) {
     return chrome.windows.create({ incognito: true, url: Utils.convertToUrl(request.url) });
+  },
+  openTabInIncognito({ tab, count }) {
+    if (tab.incognito) return;
+    chrome.tabs.query({ currentWindow: true }, function (tabs) {
+      const activeTabIndex = tab.index;
+      const startTabIndex = Math.max(
+        0,
+        Math.min(activeTabIndex, tabs.length - count),
+      );
+      tabs = tabs.slice(startTabIndex, startTabIndex + count);
+      return chrome.windows.create({
+        url: tabs.map((t) => {
+          return t.url;
+        }),
+        incognito: true,
+      });
+    });
   },
   openUrlInCurrentTab: TabOperations.openUrlInCurrentTab,
   openOptionsPageInNewTab(request) {
@@ -538,8 +580,33 @@ const sendRequestHandlers = {
 
   nextFrame: BackgroundCommands.nextFrame,
   selectSpecificTab,
+  moveTabToSpecificWindow,
   createMark: Marks.create.bind(Marks),
   gotoMark: Marks.goto.bind(Marks),
+  downloadUrl(request) {
+    let options = { url: request.url };
+    switch (request.options?.save_as) {
+      case "true":
+        options.saveAs = true;
+        break;
+      case "false":
+        options.saveAs = false;
+    }
+    if (request.options?.conflict_action) {
+      options.conflictAction = request.options.conflict_action;
+    }
+    return chrome.downloads.download(options);
+  },
+  callTabSuspender(request, sender) {
+    chrome.runtime.sendMessage("bndmaoaimiajabmeaialklhhomjcklci", {
+      name: request.message,
+      tabId: sender.tab.id,
+    });
+    chrome.runtime.sendMessage("hjmmfbdednpfamlkjhgninklhahikooe", {
+      name: request.message,
+      tabId: sender.tab.id,
+    });
+  },
   // Send a message to all frames in the current tab. If request.frameId is provided, then send
   // messages to only the frame with that ID.
   sendMessageToFrames(request, sender) {
@@ -747,6 +814,83 @@ const showUpgradeMessageIfNecessary = async function () {
     }
   }
 };
+
+function switchTab(previous = false) {
+  chrome.tabs.query({ currentWindow: true }, (tabs) => {
+    if (tabs.length === 1) return;
+    let activeTab = tabs.filter((tab) => tab.active)[0];
+    let targetTabIdx;
+    if (activeTab) {
+      let activeTabIdx = activeTab.index;
+      if (!previous && activeTabIdx === tabs.length - 1) {
+        targetTabIdx = 0;
+      } else if (previous && activeTabIdx === 0) {
+        targetTabIdx = tabs.length - 1;
+      } else {
+        targetTabIdx = previous ? activeTabIdx - 1 : activeTabIdx + 1;
+      }
+    } else return;
+    chrome.tabs.update(tabs[targetTabIdx].id, { active: true });
+  });
+}
+
+async function getClipboard() {
+  try {
+    const clipboardData = await navigator.clipboard.readText();
+    return clipboardData;
+  } catch (err) {
+    console.error("Failed to read clipboard data: ", err);
+    return null;
+  }
+}
+
+chrome.commands.onCommand.addListener(function (command) {
+  switch (command) {
+    case "previousTab":
+      switchTab(true);
+      break;
+    case "nextTab":
+      switchTab();
+      break;
+    case "visitPreviousTab":
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          BackgroundCommands.visitPreviousTab({
+            count: 1,
+            tab: { id: tabs[0].id },
+          });
+        }
+      });
+      break;
+    case "openCopiedUrlInCurrentTab":
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        getClipboard().then((text) => {
+          if (text.trim() && tabs[0]) {
+            TabOperations.openUrlInCurrentTab({
+              tabId: tabs[0].id,
+              url: text,
+            });
+          }
+        });
+      });
+      break;
+    case "openCopiedUrlInNewTab":
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        getClipboard().then((text) => {
+          if (text.trim() && tabs[0]) {
+            TabOperations.openUrlInNewTab({
+              tab: tabs[0],
+              tabId: tabs[0].id,
+              url: text,
+            });
+          }
+        });
+      });
+      break;
+    default:
+      console.error("unrecognized command:", command);
+  }
+});
 
 async function injectContentScriptsAndCSSIntoExistingTabs() {
   const manifest = chrome.runtime.getManifest();
