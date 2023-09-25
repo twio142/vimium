@@ -118,15 +118,6 @@
     },
     "visitPreviousTab": {
       "description": "Go to the last visited tab"
-    },
-    "openCopiedUrlInCurrentTab": {
-      "description": "Open the copied URL in the current tab",
-      "suggested_key": {
-        "default": "Alt+P"
-      }
-    },
-    "openCopiedUrlInNewTab": {
-      "description": "Open the copied URL in a new tab"
     }
   }
 }

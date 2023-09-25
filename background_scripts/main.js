@@ -834,16 +834,6 @@ function switchTab(previous = false) {
   });
 }
 
-async function getClipboard() {
-  try {
-    const clipboardData = await navigator.clipboard.readText();
-    return clipboardData;
-  } catch (err) {
-    console.error("Failed to read clipboard data: ", err);
-    return null;
-  }
-}
-
 chrome.commands.onCommand.addListener(function (command) {
   switch (command) {
     case "previousTab":
@@ -860,31 +850,6 @@ chrome.commands.onCommand.addListener(function (command) {
             tab: { id: tabs[0].id },
           });
         }
-      });
-      break;
-    case "openCopiedUrlInCurrentTab":
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        getClipboard().then((text) => {
-          if (text.trim() && tabs[0]) {
-            TabOperations.openUrlInCurrentTab({
-              tabId: tabs[0].id,
-              url: text,
-            });
-          }
-        });
-      });
-      break;
-    case "openCopiedUrlInNewTab":
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        getClipboard().then((text) => {
-          if (text.trim() && tabs[0]) {
-            TabOperations.openUrlInNewTab({
-              tab: tabs[0],
-              tabId: tabs[0].id,
-              url: text,
-            });
-          }
-        });
       });
       break;
     default:
