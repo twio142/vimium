@@ -118,6 +118,9 @@
     },
     "visitPreviousTab": {
       "description": "Go to the last visited tab"
+    },
+    "goBack": {
+      "description": "Go back in history"
     }
   }
 }

@@ -333,6 +333,21 @@ const BackgroundCommands = {
     }
   },
 
+  async goBack({ count, tab }) {
+    for (let index = 0; index < count; index++) {
+      try {
+        chrome.tabs.goBack(tab.id);
+      } catch {
+        let opener = tab.openerTabId;
+        if (opener) {
+          chrome.tabs.update(opener, { active: true });
+          chrome.tabs.remove(tab.id);
+        }
+        break;
+      }
+    }
+  },
+
   reload({ count, tabId, registryEntry, tab: { windowId } }) {
     const bypassCache = registryEntry.options.hard != null ? registryEntry.options.hard : false;
     return chrome.tabs.query({ windowId }, function (tabs) {
@@ -848,6 +863,16 @@ chrome.commands.onCommand.addListener(function (command) {
           BackgroundCommands.visitPreviousTab({
             count: 1,
             tab: { id: tabs[0].id },
+          });
+        }
+      });
+      break;
+    case "goBack":
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          BackgroundCommands.goBack({
+            count: 1,
+            tab: tabs[0],
           });
         }
       });
