@@ -24,6 +24,7 @@ const completionSources = {
   domains: new DomainCompleter(),
   tabs: new TabCompleter(),
   windows: new WindowCompleter(),
+  recentlyClosed: new RecentlyClosedTabCompleter(),
   searchEngines: new SearchEngineCompleter(),
 };
 
@@ -38,6 +39,7 @@ const completers = {
   ]),
   bookmarks: new MultiCompleter([completionSources.bookmarks]),
   tabs: new MultiCompleter([completionSources.tabs]),
+  recentlyClosed: new MultiCompleter([completionSources.recentlyClosed]),
   windows: new MultiCompleter([completionSources.windows]),
 };
 
@@ -126,6 +128,11 @@ const toggleMuteTab = (request, sender) => {
     muteTab(currentTab);
   }
 };
+
+//
+// Restore the session with the ID specified in request.id
+//
+const restoreSession = (request) => chrome.sessions.restore(request.id);
 
 //
 // Selects the tab with the ID specified in request.id
@@ -595,6 +602,7 @@ const sendRequestHandlers = {
 
   nextFrame: BackgroundCommands.nextFrame,
   selectSpecificTab,
+  restoreSession,
   moveTabToSpecificWindow,
   createMark: Marks.create.bind(Marks),
   gotoMark: Marks.goto.bind(Marks),
