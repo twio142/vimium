@@ -478,6 +478,7 @@ class DomainCompleter {
 }
 
 // Searches through all open tabs, matching on title and URL.
+// If the query is empty, then return a list of open tabs, sorted by recency.
 class TabCompleter {
   async filter({ queryTerms, completerName }) {
     if (completerName != "tabs" && queryTerms.length == 0) return [];
@@ -513,7 +514,7 @@ class TabCompleter {
   }
 
   computeRelevancy(suggestion) {
-    if (suggestion.queryTerms.length) {
+    if (suggestion.queryTerms.length > 0) {
       return RankingUtils.wordRelevancy(suggestion.queryTerms, suggestion.url, suggestion.title);
     } else {
       return BgUtils.tabRecency.recencyScore(suggestion.tabId);
@@ -717,9 +718,7 @@ class MultiCompleter {
     }
   }
 
-  async filter(request, onComplete) {
-    Utils.assert(onComplete == null, "completer.filter called with a callback");
-
+  async filter(request) {
     const searchEngineCompleter = this.completers.find((c) => c instanceof SearchEngineCompleter);
     const query = request.query;
     const queryTerms = request.queryTerms;
