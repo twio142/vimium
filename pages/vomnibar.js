@@ -32,6 +32,7 @@ const Vomnibar = {
     this.vomnibarUI.setForceNewTab(options.newTab);
     this.vomnibarUI.setQuery(options.query);
     this.vomnibarUI.moveCursorToStart(options.cursorAtStart);
+    this.vomnibarUI.setActiveUserSearchEngine(UserSearchEngines.keywordToEngine[options.keyword]);
     this.vomnibarUI.update();
   },
 
@@ -65,6 +66,10 @@ class VomnibarUI {
   setQuery(query) {
     this.input.value = query;
   }
+  setActiveUserSearchEngine(userSearchEngine) {
+    this.activeUserSearchEngine = userSearchEngine;
+  }
+
   setInitialSelectionValue(initialSelectionValue) {
     this.initialSelectionValue = initialSelectionValue;
   }
