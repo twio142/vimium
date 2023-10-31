@@ -856,31 +856,6 @@ function switchTab(previous = false) {
   });
 }
 
-function copyTabUrl(markdown=!1) {
-  const copyToClipboard = (url) => {
-      const input = document.createElement("input");
-      document.body.appendChild(input);
-      input.value = url;
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-  };
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]) {
-      let url = tabs[0].url;
-      if (markdown) {
-        let title = tabs[0].title;
-        url = `[${title}](${url})`;
-      }
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: copyToClipboard,
-        args: [url],
-      });
-    }
-  });
-}
-
 function pasteIntoTab(newTab=!1) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
@@ -930,12 +905,6 @@ chrome.commands.onCommand.addListener(function (command) {
           });
         }
       });
-      break;
-    case "copyTabUrl":
-      copyTabUrl();
-      break;
-    case "copyTabUrlMarkdown":
-      copyTabUrl(!0);
       break;
     case "pasteIntoActiveTab":
       pasteIntoTab();

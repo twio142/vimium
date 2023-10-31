@@ -122,12 +122,6 @@
     "goBack": {
       "description": "Go back in history"
     },
-    "copyTabUrl": {
-      "description": "Copy the current tab's URL"
-    },
-    "copyTabMarkdown": {
-      "description": "Copy the current tab's title and URL as a markdown link"
-    },
     "pasteIntoActiveTab": {
       "description": "Paste clipboard contents into the current tab"
     },
