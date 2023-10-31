@@ -403,11 +403,6 @@ class VomnibarUI {
         tabId: completion.tabId,
         windowId: completion.windowId,
       });
-    } else if (completion.description == "session") {
-      chrome.runtime.sendMessage({
-        handler: "restoreSession",
-        id: completion.sessionId,
-      });
     } else {
       this.launchUrl(completion.url, openInNewTab, openInNewBackgroundTab);
     }

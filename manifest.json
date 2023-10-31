@@ -127,6 +127,12 @@
     },
     "copyTabMarkdown": {
       "description": "Copy the current tab's title and URL as a markdown link"
+    },
+    "pasteIntoActiveTab": {
+      "description": "Paste clipboard contents into the current tab"
+    },
+    "pasteIntoNewTab": {
+      "description": "Paste clipboard contents into a new tab"
     }
   }
 }

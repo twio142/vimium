@@ -881,6 +881,28 @@ function copyTabUrl(markdown=!1) {
   });
 }
 
+function pasteIntoTab(newTab=!1) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]) {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: (newTab) => {
+          navigator.clipboard.readText().then((content) => {
+            content = content.trim();
+            if (!content) return;
+            if (newTab) {
+              window.open(Utils.convertToUrl(content));
+            } else {
+              window.location.href = Utils.convertToUrl(content);
+            }
+          });
+        },
+        args: [newTab],
+      });
+    }
+  });
+}
+
 chrome.commands.onCommand.addListener(function (command) {
   switch (command) {
     case "previousTab":
@@ -914,6 +936,12 @@ chrome.commands.onCommand.addListener(function (command) {
       break;
     case "copyTabUrlMarkdown":
       copyTabUrl(!0);
+      break;
+    case "pasteIntoActiveTab":
+      pasteIntoTab();
+      break;
+    case "pasteIntoNewTab":
+      pasteIntoTab(!0);
       break;
     default:
       console.error("unrecognized command:", command);
