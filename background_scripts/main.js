@@ -621,10 +621,6 @@ const sendRequestHandlers = {
     return chrome.downloads.download(options);
   },
   callTabSuspender(request, sender) {
-    chrome.runtime.sendMessage("bndmaoaimiajabmeaialklhhomjcklci", {
-      name: request.message,
-      tabId: sender.tab.id,
-    });
     chrome.runtime.sendMessage("hjmmfbdednpfamlkjhgninklhahikooe", {
       name: request.message,
       tabId: sender.tab.id,
