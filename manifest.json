@@ -31,7 +31,8 @@
     "scripting",
     // The favicon permission is not yet supported by Firefox.
     "favicon",
-    "webNavigation"
+    "webNavigation",
+    "downloads"
   ],
   "content_scripts": [
     {
