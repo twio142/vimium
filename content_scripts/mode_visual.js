@@ -425,9 +425,9 @@ class VisualMode extends KeyHandlerMode {
 // A movement can be either a string or a function.
 VisualMode.prototype.movements = {
   "l": "forward character",
-  "j": "backward character",
-  "k": "forward line",
-  "i": "backward line",
+  "h": "backward character",
+  "j": "forward line",
+  "k": "backward line",
   "e": "forward word",
   "b": "backward word",
   "w": "forward vimword",
@@ -491,13 +491,13 @@ VisualMode.prototype.movements = {
   "o"() {
     return this.movement.reverseSelection();
   },
-  "a"() {
+  "A"() {
     document.querySelector("hypothesis-adder")?.shadowRoot.querySelector(
       "button[aria-label*=Annotate]",
     )?.click();
     this.exit();
   },
-  "h"() {
+  "a"() {
     document.querySelector("hypothesis-adder")?.shadowRoot.querySelector(
       "button[aria-label*=Highlight]",
     )?.click();

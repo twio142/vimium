@@ -159,14 +159,14 @@ class VomnibarUI {
     } else if (
       (key === "up") ||
       (event.shiftKey && (event.key === "Tab")) ||
-      (event.ctrlKey && ((key === "i") || (key === "p")))
+      (event.ctrlKey && ((key === "k") || (key === "p")))
     ) {
       return "up";
     } else if ((event.key === "Tab") && !event.shiftKey) {
       return "tab";
     } else if (
       (key === "down") ||
-      (event.ctrlKey && ((key === "k") || (key === "n")))
+      (event.ctrlKey && ((key === "j") || (key === "n")))
     ) {
       return "down";
     } else if (event.ctrlKey && (key === "enter")) {
@@ -403,11 +403,11 @@ class VomnibarUI {
         tabId: completion.tabId,
         windowId: completion.windowId,
       });
-    } else if (completion.description == "session") {
-      chrome.runtime.sendMessage({
-        handler: "restoreSession",
-        id: completion.sessionId,
-      });
+    // } else if (completion.description == "session") {
+    //   chrome.runtime.sendMessage({
+    //     handler: "restoreSession",
+    //     id: completion.sessionId,
+    //   });
     } else {
       this.launchUrl(completion.url, openInNewTab, openInNewBackgroundTab);
     }
