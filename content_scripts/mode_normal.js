@@ -446,12 +446,12 @@ const textInputXPath = (function () {
 // used by the findAndFollow* functions.
 const followLink = function (linkElement) {
   if (linkElement.nodeName.toLowerCase() === "link") {
-    return window.location.href = linkElement.href;
+    window.location.href = linkElement.href;
   } else {
     // if we can click on it, don't simply set location.href: some next/prev links are meant to
     // trigger AJAX calls, like the 'more' button on GitHub's newsfeed.
     linkElement.scrollIntoView();
-    return DomUtils.simulateClick(linkElement);
+    DomUtils.simulateClick(linkElement);
   }
 };
 
@@ -489,7 +489,8 @@ const findAndFollowLink = function (linkStrings) {
 
     let linkMatches = false;
     for (const linkString of linkStrings) {
-      const matches = link.innerText.toLowerCase().includes(linkString) ||
+      // SVG elements can have a null innerText.
+      const matches = link.innerText?.toLowerCase().includes(linkString) ||
         link.value?.includes?.(linkString) ||
         link.getAttribute("title")?.toLowerCase().includes(linkString) ||
         link.getAttribute("aria-label")?.toLowerCase().includes(linkString);

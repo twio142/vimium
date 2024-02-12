@@ -137,13 +137,14 @@ const restoreSession = (request) => chrome.sessions.restore(request.id);
 //
 // Selects the tab with the ID specified in request.id
 //
-const selectSpecificTab = (request) =>
-  chrome.tabs.get(request.id, function (tab) {
-    if (chrome.windows != null) {
-      chrome.windows.update(tab.windowId, { focused: true });
-    }
-    return chrome.tabs.update(request.id, { active: true });
-  });
+async function selectSpecificTab(request) {
+  const tab = await chrome.tabs.get(request.id);
+  // Focus the tab's window. TODO(philc): Why are we null-checking chrome.windows here?
+  if (chrome.windows != null) {
+    await chrome.windows.update(tab.windowId, { focused: true });
+  }
+  await chrome.tabs.update(request.id, { active: true });
+}
 
 //
 // Move the tab with request.tabId to the window with request.windowId
@@ -193,7 +194,8 @@ const BackgroundCommands = {
         request.urls = [request.url];
       } else {
         // Otherwise, if we have a registryEntry containing URLs, then use them.
-        const urlList = request.registryEntry.optionList.filter((opt) => Utils.isUrl(opt));
+        const urlList = request.registryEntry.optionList
+          .filter(async (opt) => await UrlUtils.isUrl(opt));
         if (urlList.length > 0) {
           request.urls = urlList;
         } else {
@@ -276,7 +278,12 @@ const BackgroundCommands = {
     return selectTab("last", request);
   },
   removeTab({ count, tab }) {
-    return forCountTabs(count, tab, (tab) => chrome.tabs.remove(tab.id));
+    return forCountTabs(count, tab, (tab) => {
+      // In Firefox, Ctrl-W will not close a pinned tab, but on Chrome, it will. We try to be
+      // consistent with each browser's UX for pinned tabs.
+      if (tab.pinned && BgUtils.isFirefox()) return;
+      chrome.tabs.remove(tab.id);
+    });
   },
   restoreTab: mkRepeatCommand((request, callback) =>
     chrome.sessions.restore(null, callback(request))
@@ -336,7 +343,7 @@ const BackgroundCommands = {
   visitPreviousTab({ count, tab }) {
     const tabIds = BgUtils.tabRecency.getTabsByRecency().filter((tabId) => tabId !== tab.id);
     if (tabIds.length > 0) {
-      return selectSpecificTab({ id: tabIds[(count - 1) % tabIds.length] });
+      selectSpecificTab({ id: tabIds[(count - 1) % tabIds.length] });
     }
   },
 
@@ -563,8 +570,11 @@ const sendRequestHandlers = {
   openUrlInNewWindow(request) {
     return TabOperations.openUrlInNewWindow(request);
   },
-  openUrlInIncognito(request) {
-    return chrome.windows.create({ incognito: true, url: Utils.convertToUrl(request.url) });
+  async openUrlInIncognito(request) {
+    return chrome.windows.create({
+      incognito: true,
+      url: await UrlUtils.convertToUrl(request.url),
+    });
   },
   openTabInIncognito({ tab, count }) {
     if (tab.incognito) return;
@@ -641,10 +651,12 @@ const sendRequestHandlers = {
   },
 
   async initializeFrame(request, sender) {
-    const tabId = sender.tab.id;
-    const enabledState = Exclusions.isEnabledForUrl(request.url);
+    // Check whether the extension is enabled for the top frame's URL, rather than the URL of the
+    // specific frame that sent this request.
+    const enabledState = Exclusions.isEnabledForUrl(sender.tab.url);
 
-    if (request.frameIsFocused) {
+    const isTopFrame = sender.frameId == 0;
+    if (isTopFrame) {
       let whichIcon;
       if (!enabledState.isEnabledForUrl) {
         whichIcon = "disabled";
@@ -668,7 +680,7 @@ const sendRequestHandlers = {
           "32": "../icons/action_disabled_32.png",
         },
       };
-      chrome.action.setIcon({ path: iconSet[whichIcon], tabId: tabId });
+      chrome.action.setIcon({ path: iconSet[whichIcon], tabId: sender.tab.id });
     }
 
     const response = Object.assign({

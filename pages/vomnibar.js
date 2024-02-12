@@ -240,11 +240,11 @@ class VomnibarUI {
         if (query.length == 0) return;
         const firstCompletion = this.completions[0];
         if (isPrimarySearchSuggestion(firstCompletion)) {
-          query = Utils.createSearchUrl(query, firstCompletion?.searchUrl);
+          query = UrlUtils.createSearchUrl(query, firstCompletion?.searchUrl);
         }
         this.hide(() => this.launchUrl(query, openInNewTab, openInNewBackgroundTab));
       } else if (isPrimarySearchSuggestion(completion)) {
-        query = Utils.createSearchUrl(query, completion.searchUrl);
+        query = UrlUtils.createSearchUrl(query, completion.searchUrl);
         this.hide(() => this.launchUrl(query, openInNewTab, openInNewBackgroundTab));
       } else {
         this.hide(() => this.openCompletion(completion, openInNewTab, openInNewBackgroundTab));
@@ -403,11 +403,11 @@ class VomnibarUI {
         tabId: completion.tabId,
         windowId: completion.windowId,
       });
-    // } else if (completion.description == "session") {
-    //   chrome.runtime.sendMessage({
-    //     handler: "restoreSession",
-    //     id: completion.sessionId,
-    //   });
+    } else if (completion.description == "session") {
+      chrome.runtime.sendMessage({
+        handler: "restoreSession",
+        id: completion.sessionId,
+      });
     } else {
       this.launchUrl(completion.url, openInNewTab, openInNewBackgroundTab);
     }
@@ -416,8 +416,8 @@ class VomnibarUI {
   launchUrl(url, openInNewTab, background) {
     // If the URL is a bookmarklet (so, prefixed with "javascript:"), then we always open it in the
     // current tab.
-    if (openInNewTab) {
-      openInNewTab = !Utils.hasJavascriptPrefix(url);
+    if (openInNewTab && Utils.hasJavascriptPrefix(url)) {
+      openInNewTab = false;
     }
     chrome.runtime.sendMessage({
       handler: openInNewTab ? "openUrlInNewTab" : "openUrlInCurrentTab",
