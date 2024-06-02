@@ -480,11 +480,10 @@ class DomainCompleter {
 // Searches through all open tabs, matching on title and URL.
 // If the query is empty, then return a list of open tabs, sorted by recency.
 class TabCompleter {
-  async filter({ queryTerms, completerName }) {
+  async filter({ queryTerms }) {
     if (completerName != "tabs" && queryTerms.length == 0) return [];
-
-    // NOTE(philc): We search all tabs, not just those in the current window. I'm not sure if this
-    // is the correct UX.
+    await BgUtils.tabRecency.init();
+    // We search all tabs, not just those in the current window.
     const tabs = await chrome.tabs.query({});
     const results = tabs.filter((tab) => RankingUtils.matches(queryTerms, tab.url, tab.title));
     const suggestions = results
