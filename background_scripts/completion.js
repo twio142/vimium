@@ -480,7 +480,7 @@ class DomainCompleter {
 // Searches through all open tabs, matching on title and URL.
 // If the query is empty, then return a list of open tabs, sorted by recency.
 class TabCompleter {
-  async filter({ queryTerms }) {
+  async filter({ queryTerms, completerName }) {
     if (completerName != "tabs" && queryTerms.length == 0) return [];
     await BgUtils.tabRecency.init();
     // We search all tabs, not just those in the current window.

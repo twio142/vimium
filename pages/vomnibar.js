@@ -240,17 +240,28 @@ class VomnibarUI {
         if (query.length == 0) return;
         const firstCompletion = this.completions[0];
         const isPrimary = isPrimarySearchSuggestion(firstCompletion);
-        if (isPrimarySearchSuggestion(firstCompletion)) {
+        if (isPrimary) {
           query = UrlUtils.createSearchUrl(query, firstCompletion.searchUrl);
-          this.launchUrl(query, openInNewTab, openInNewBackgroundTab);
         } else {
-          this.hide(() =>
+          UrlUtils.isUrl(query).then((isUrl) => {
+            if (isUrl) {
+              this.hide(() => this.launchUrl(query, openInNewTab, openInNewBackgroundTab));
+            } else {
+              this.hide(() =>
+                chrome.runtime.sendMessage({
+                  handler: "launchSearchQuery",
+                  query,
+                  openInNewTab,
+                })
+              );
+            }
+          }).catch((e) => (console.error(e), this.hide(() =>
             chrome.runtime.sendMessage({
               handler: "launchSearchQuery",
               query,
               openInNewTab,
             })
-          );
+          )));
         }
       } else if (isPrimarySearchSuggestion(completion)) {
         query = UrlUtils.createSearchUrl(query, completion.searchUrl);
