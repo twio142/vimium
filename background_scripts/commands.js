@@ -449,7 +449,6 @@ const defaultKeyMappings = {
   "B": "Vomnibar.activateBookmarksInNewTab",
   "ge": "Vomnibar.activateEditUrl",
   "gE": "Vomnibar.activateEditUrlInNewTab",
-  "gr": "Vomnibar.restoreSession",
   "gw": "Vomnibar.moveTabToWindow",
 
   // Navigating history

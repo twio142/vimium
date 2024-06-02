@@ -85,11 +85,6 @@ const OPEN_IN_NEW_FG_TAB = {
   indicator: "Open link in new tab and switch to it",
   clickModifiers: { shiftKey: true, metaKey: isMac, ctrlKey: !isMac },
 };
-const OPEN_WITH_QUEUE = {
-  name: "queue",
-  indicator: "Open multiple links in new tabs",
-  clickModifiers: { metaKey: isMac, ctrlKey: !isMac },
-};
 const COPY_LINK_URL = {
   name: "link",
   indicator: "Copy link URL to Clipboard",
@@ -119,9 +114,9 @@ const COPY_LINK_TEXT = {
     }
   },
 };
-const COPY_LINK_MD_URL = {
-  name: "copy-link-md-url",
-  indicator: "Copy link markdown URL",
+const COPY_MD_LINK = {
+  name: "copy-md-link",
+  indicator: "Copy markdown link",
   linkActivator(link) {
     if (link.href != null) {
       let text = `[${link.textContent.trim()}](${link.href})`;
@@ -143,6 +138,18 @@ const PASTE_IN_CURRENT_TAB = {
       chrome.runtime.sendMessage({
         handler: "openUrlInCurrentTab",
         url: link.href,
+      });
+  },
+};
+const OPEN_WITH_QUEUE = {
+  name: "queue",
+  indicator: "Open multiple links in new tabs",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInNewTab",
+        url: link.href,
+        active: false,
       });
   },
 };
@@ -175,6 +182,11 @@ const OPEN_INCOGNITO = {
   linkActivator(link) {
     chrome.runtime.sendMessage({ handler: "openUrlInIncognito", url: link.href });
   },
+};
+const SHIFT_CLICK = {
+  name: "shift-click",
+  indicator: "Shift-click link",
+  clickModifiers: { shiftKey: true, altKey: false, metaKey: false, ctrlKey: false },
 };
 const DOWNLOAD_LINK_URL = {
   name: "download",
@@ -235,11 +247,12 @@ const availableModes = [
   OPEN_WITH_QUEUE,
   COPY_LINK_URL,
   COPY_LINK_TEXT,
-  COPY_LINK_MD_URL,
+  COPY_MD_LINK,
   PASTE_IN_CURRENT_TAB,
   PASTE_IN_NEW_TAB,
   PASTE_IN_NEW_BG_TAB,
   OPEN_INCOGNITO,
+  SHIFT_CLICK,
   DOWNLOAD_LINK_URL,
   HOVER_LINK,
   FOCUS_LINK,
@@ -310,7 +323,7 @@ const HintCoordinator = {
     const requireHref = [
       COPY_LINK_URL,
       COPY_LINK_TEXT,
-      COPY_LINK_MD_URL,
+      COPY_MD_LINK,
       PASTE_IN_CURRENT_TAB,
       PASTE_IN_NEW_TAB,
       PASTE_IN_NEW_BG_TAB,
@@ -414,8 +427,8 @@ const LinkHints = {
       case "copy-text":
         mode = COPY_LINK_TEXT;
         break;
-      case "copy-md-url":
-        mode = COPY_LINK_MD_URL;
+      case "copy-md-link":
+        mode = COPY_MD_LINK;
         break;
       case "hover":
         mode = HOVER_LINK;
@@ -616,9 +629,8 @@ class LinkHintsMode {
       [
         COPY_LINK_URL,
         COPY_LINK_TEXT,
-        COPY_LINK_MD_URL,
+        COPY_MD_LINK,
         OPEN_IN_CURRENT_TAB,
-        OPEN_WITH_QUEUE,
         OPEN_IN_NEW_BG_TAB,
         OPEN_IN_NEW_FG_TAB,
         HOVER_LINK,
@@ -640,20 +652,19 @@ class LinkHintsMode {
             [
               COPY_LINK_URL,
               COPY_LINK_TEXT,
-              COPY_LINK_MD_URL,
+              COPY_MD_LINK,
             ].includes(this.mode)
           ) {
             this.setOpenLinkMode(this.mode === COPY_LINK_URL ? COPY_LINK_TEXT : COPY_LINK_URL);
           } else if (
             [
               OPEN_IN_CURRENT_TAB,
-              OPEN_WITH_QUEUE,
               OPEN_IN_NEW_BG_TAB,
               OPEN_IN_NEW_FG_TAB,
             ].includes(this.mode)
           ) {
             this.setOpenLinkMode(
-              this.mode === OPEN_IN_CURRENT_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_CURRENT_TAB,
+              this.mode === OPEN_IN_CURRENT_TAB ? SHIFT_CLICK : this.mode === OPEN_WITH_QUEUE ? OPEN_IN_NEW_BG_TAB :OPEN_IN_CURRENT_TAB,
             );
           } else if ([HOVER_LINK, FOCUS_LINK].includes(this.mode)) {
             this.setOpenLinkMode(this.mode === HOVER_LINK ? FOCUS_LINK : HOVER_LINK);
@@ -663,6 +674,12 @@ class LinkHintsMode {
             this.setOpenLinkMode(
               this.mode === PASTE_IN_CURRENT_TAB ? PASTE_IN_NEW_BG_TAB : PASTE_IN_CURRENT_TAB,
             );
+          } else if (
+            [COPY_IMAGE_URL, DOWNLOAD_IMAGE].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === COPY_IMAGE_URL ? DOWNLOAD_IMAGE : COPY_IMAGE_URL,
+            );
           }
           break;
         case "Control":
@@ -670,11 +687,11 @@ class LinkHintsMode {
             [
               COPY_LINK_URL,
               COPY_LINK_TEXT,
-              COPY_LINK_MD_URL,
+              COPY_MD_LINK,
             ].includes(this.mode)
           ) {
             this.setOpenLinkMode(
-              this.mode === COPY_LINK_MD_URL ? COPY_LINK_TEXT : COPY_LINK_MD_URL,
+              this.mode === COPY_MD_LINK ? COPY_LINK_TEXT : COPY_MD_LINK,
             );
           } else if (
             [
@@ -692,12 +709,6 @@ class LinkHintsMode {
           ) {
             this.setOpenLinkMode(
               this.mode === PASTE_IN_NEW_TAB ? PASTE_IN_NEW_BG_TAB : PASTE_IN_NEW_TAB,
-            );
-          } else if (
-            [COPY_IMAGE_URL, DOWNLOAD_IMAGE].includes(this.mode)
-          ) {
-            this.setOpenLinkMode(
-              this.mode === COPY_IMAGE_URL ? DOWNLOAD_IMAGE : COPY_IMAGE_URL,
             );
           }
           break;
