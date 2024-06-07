@@ -361,7 +361,7 @@ const BackgroundCommands = {
   async goBack({ count, tab }) {
     for (let index = 0; index < count; index++) {
       try {
-        chrome.tabs.goBack(tab.id);
+        await chrome.tabs.goBack(tab.id);
       } catch {
         let opener = tab.openerTabId;
         if (opener) {
