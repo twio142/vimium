@@ -159,14 +159,14 @@ class VomnibarUI {
     } else if (
       (key === "up") ||
       (event.shiftKey && (event.key === "Tab")) ||
-      (event.ctrlKey && ((key === "k") || (key === "p")))
+      (event.ctrlKey && key === "p")
     ) {
       return "up";
     } else if ((event.key === "Tab") && !event.shiftKey) {
       return "tab";
     } else if (
       (key === "down") ||
-      (event.ctrlKey && ((key === "j") || (key === "n")))
+      (event.ctrlKey && key === "n")
     ) {
       return "down";
     } else if (event.ctrlKey && (key === "enter")) {

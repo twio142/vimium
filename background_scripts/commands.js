@@ -361,6 +361,7 @@ const Commands = {
       "suspendTab",
       "suspendAllTabs",
       "unsuspendAllTabs",
+      "openStewardBox",
     ],
     misc: ["showHelp", "toggleViewSource"],
   },
@@ -396,6 +397,7 @@ const Commands = {
     "suspendTab",
     "suspendAllTabs",
     "unsuspendAllTabs",
+    "openStewardBox",
   ],
 };
 
@@ -571,6 +573,7 @@ const commandDescriptions = {
   suspendTab: ["Suspend tab", { noRepeat: true }],
   suspendAllTabs: ["Suspend all tabs in this window", { noRepeat: true }],
   unsuspendAllTabs: ["Unsuspend all tabs in this window", { noRepeat: true }],
+  openStewardBox: ["Open Steward box", { noRepeat: true }],
 
   "Vomnibar.activate": ["Open URL, bookmark or history entry", { topFrame: true }],
   "Vomnibar.activateInNewTab": ["Open URL, bookmark or history entry in a new tab", {

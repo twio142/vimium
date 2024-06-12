@@ -653,6 +653,11 @@ const sendRequestHandlers = {
       tabId: sender.tab.id,
     });
   },
+  openStewardBox(request) {
+    chrome.runtime.sendMessage("jglmompgeddkbcdamdknmebaimldkkbl", {
+      action: "openBox",
+    });
+  },
   // Send a message to all frames in the current tab. If request.frameId is provided, then send
   // messages to only the frame with that ID.
   sendMessageToFrames(request, sender) {

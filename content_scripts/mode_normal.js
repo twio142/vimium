@@ -233,6 +233,10 @@ const NormalModeCommands = {
     );
   },
 
+  openStewardBox() {
+    chrome.runtime.sendMessage({ handler: "openStewardBox" });
+  },
+
   // Mode changes.
   enterInsertMode() {
     // If a focusable element receives the focus, then we exit and leave the permanently-installed
