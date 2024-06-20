@@ -653,7 +653,7 @@ const sendRequestHandlers = {
       tabId: sender.tab.id,
     });
   },
-  openStewardBox(request) {
+  openStewardBox() {
     chrome.runtime.sendMessage("jglmompgeddkbcdamdknmebaimldkkbl", {
       action: "openBox",
     });

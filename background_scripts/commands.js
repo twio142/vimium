@@ -323,6 +323,7 @@ const Commands = {
       "mainFrame",
       "Marks.activateCreateMode",
       "Marks.activateGotoMode",
+      "annotate",
     ],
     vomnibarCommands: [
       "Vomnibar.activate",
@@ -398,6 +399,7 @@ const Commands = {
     "suspendAllTabs",
     "unsuspendAllTabs",
     "openStewardBox",
+    "annotate",
   ],
 };
 
@@ -578,6 +580,7 @@ const commandDescriptions = {
   suspendAllTabs: ["Suspend all tabs in this window", { noRepeat: true }],
   unsuspendAllTabs: ["Unsuspend all tabs in this window", { noRepeat: true }],
   openStewardBox: ["Open Steward box", { noRepeat: true }],
+  annotate: ["Annotate on the current page", { noRepeat: true }],
 
   "Vomnibar.activate": ["Open URL, bookmark or history entry", { topFrame: true }],
   "Vomnibar.activateInNewTab": ["Open URL, bookmark or history entry in a new tab", {

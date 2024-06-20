@@ -402,6 +402,12 @@ const NormalModeCommands = {
     selection = selection ? " " + selection : "";
     return Vomnibar.open(null, { query: selection, newTab: true, cursorAtStart: true });
   },
+
+  annotate(_, options) {
+    document.querySelector("hypothesis-adder")?.shadowRoot.querySelector(
+      `button[aria-label*=${options.registryEntry.options.note == 1 ? 'Annotate' : 'Highlight'}]`,
+    )?.click();
+  }
 };
 
 if (typeof LinkHints !== "undefined") {
