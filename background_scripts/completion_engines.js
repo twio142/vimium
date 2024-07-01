@@ -228,6 +228,23 @@ class Brave extends BaseEngine {
   }
 }
 
+class BiliBili extends BaseEngine {
+  constructor() {
+    super({
+      engineUrl: "https://s.search.bilibili.com/main/suggest?func=suggest&suggest_type=accurate&sub_type=tag&main_ver=v1&term=%s",
+      regexps: ["^https?://www\\.bilibili\\.com/"],
+      example: {
+        searchUrl: "https://www.bilibili.com/search?keyword=%s",
+        keyword: "bil",
+      },
+    });
+  }
+
+  parse(text) {
+    return JSON.parse(text).result.tag.map((suggestion) => suggestion.value);
+  }
+}
+
 // On the user-facing documentation page pages/completion_engines.html, these completion search
 // engines will be shown to the user in this order.
 const CompletionEngines = [
@@ -241,6 +258,7 @@ const CompletionEngines = [
   Webster,
   Qwant,
   Brave,
+  BiliBili,
 ];
 
 globalThis.CompletionEngines = CompletionEngines;

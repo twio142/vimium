@@ -654,7 +654,7 @@ const sendRequestHandlers = {
     });
   },
   openStewardBox() {
-    chrome.runtime.sendMessage("jglmompgeddkbcdamdknmebaimldkkbl", {
+    chrome.runtime.sendMessage("ohnbgofblifoaoejkppdmegkiflhbooe", {
       action: "openBox",
     });
   },
