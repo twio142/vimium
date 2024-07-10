@@ -297,6 +297,7 @@ const Commands = {
       "scrollToLeft",
       "scrollToRight",
       "reload",
+      "hardReload",
       "copyCurrentUrl",
       "copyCurrentTitle",
       "copyCurrentMDLink",
@@ -400,6 +401,7 @@ const Commands = {
     "unsuspendAllTabs",
     "openStewardBox",
     "annotate",
+    "hardReload",
   ],
 };
 
@@ -418,6 +420,7 @@ const defaultKeyMappings = {
   "d": "scrollPageDown",
   "u": "scrollPageUp",
   "r": "reload",
+  "R": "hardReload",
   "yy": "copyCurrentUrl",
   "yY": "copyCurrentTitle",
   "ym": "copyCurrentMDLink",
@@ -509,6 +512,7 @@ const commandDescriptions = {
   scrollFullPageUp: ["Scroll a full page up"],
 
   reload: ["Reload the page", { background: true }],
+  hardReload: ["Hard reload the page", { background: true }],
   toggleViewSource: ["View page source", { noRepeat: true }],
 
   copyCurrentUrl: ["Copy the current URL to the clipboard", { noRepeat: true }],
