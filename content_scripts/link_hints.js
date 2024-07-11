@@ -625,7 +625,7 @@ class LinkHintsMode {
 
     // NOTE(smblott) The modifier behaviour here applies only to alphabet hints.
     if (
-      ["Control", "Shift"].includes(event.key) && !Settings.get("filterLinkHints") &&
+      ["Alt", "Shift"].includes(event.key) && !Settings.get("filterLinkHints") &&
       [
         COPY_LINK_URL,
         COPY_LINK_TEXT,
@@ -682,7 +682,7 @@ class LinkHintsMode {
             );
           }
           break;
-        case "Control":
+        case "Alt":
           if (
             [
               COPY_LINK_URL,

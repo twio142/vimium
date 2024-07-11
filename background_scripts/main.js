@@ -907,11 +907,7 @@ function pasteIntoTab(newTab=!1) {
           navigator.clipboard.readText().then((content) => {
             content = content.trim();
             if (!content) return;
-            if (newTab) {
-              window.open(Utils.convertToUrl(content));
-            } else {
-              window.location.href = Utils.convertToUrl(content);
-            }
+            chrome.runtime.sendMessage({ handler: newTab ? "openUrlInNewTab" : "openUrlInCurrentTab", url: content });
           });
         },
         args: [newTab],
