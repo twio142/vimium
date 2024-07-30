@@ -364,6 +364,10 @@ const Commands = {
       "suspendAllTabs",
       "unsuspendAllTabs",
       "openStewardBox",
+      "setZoom",
+      "zoomIn",
+      "zoomOut",
+      "zoomReset",
     ],
     misc: ["showHelp", "toggleViewSource"],
   },
@@ -402,6 +406,10 @@ const Commands = {
     "openStewardBox",
     "annotate",
     "hardReload",
+    "setZoom",
+    "zoomIn",
+    "zoomOut",
+    "zoomReset",
   ],
 };
 
@@ -481,6 +489,9 @@ const defaultKeyMappings = {
   "X": "restoreTab",
   "<a-p>": "togglePinTab",
   "<a-m>": "toggleMuteTab",
+  "zi": "zoomIn",
+  "zo": "zoomOut",
+  "z0": "zoomReset",
 
   // Marks
   "m": "Marks.activateCreateMode",
@@ -585,6 +596,11 @@ const commandDescriptions = {
   unsuspendAllTabs: ["Unsuspend all tabs in this window", { noRepeat: true }],
   openStewardBox: ["Open Steward box", { noRepeat: true }],
   annotate: ["Annotate on the current page", { noRepeat: true }],
+
+  setZoom: ["Set zoom level to a given value. E.g. map zz setZoom 1.5", { background: true }],
+  zoomIn: ["Increase zoom", { background: true }],
+  zoomOut: ["Decrease zoom", { background: true }],
+  zoomReset: ["Reset zoom", { background: true }],
 
   "Vomnibar.activate": ["Open URL, bookmark or history entry", { topFrame: true }],
   "Vomnibar.activateInNewTab": ["Open URL, bookmark or history entry in a new tab", {

@@ -203,6 +203,34 @@ const mkRepeatCommand = (command) => (function (request) {
   }
 });
 
+function nextZoomLevel(currentZoom, steps) {
+  // Chrome's default zoom levels.
+  const chromeLevels = [0.25, 0.33, 0.5, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
+  // Firefox's default zoom levels.
+  const firefoxLevels = [0.3, 0.5, 0.67, 0.8, 0.9, 1, 1.2, 1.33, 1.5, 1.7, 2, 2.4, 3, 4, 5];
+
+  let zoomLevels = chromeLevels; // Chrome by default
+  if (BgUtils.isFirefox()) {
+    zoomLevels = firefoxLevels;
+  }
+
+  if (steps === 0) { // Nothing
+    return currentZoom;
+  } else if (steps > 0) { // In
+    // Chrome sometimes returns values with floating point errors.
+    // Example: Chrome gives 0.32999999999999996 instead of 0.33.
+    currentZoom += 0.0000001; // This is needed to solve floating point bugs in Chrome.
+    const nextIndex = zoomLevels.findIndex((level) => level > currentZoom);
+    const floorIndex = nextIndex == -1 ? zoomLevels.length : nextIndex - 1;
+    return zoomLevels[Math.min(zoomLevels.length - 1, floorIndex + steps)];
+  } else if (steps < 0) { // Out
+    currentZoom -= 0.0000001; // This is needed to solve floating point bugs in Chrome.
+    let ceilIndex = zoomLevels.findIndex((level) => level >= currentZoom);
+    ceilIndex = ceilIndex == -1 ? zoomLevels.length : ceilIndex;
+    return zoomLevels[Math.max(0, ceilIndex + steps)];
+  }
+}
+
 // These are commands which are bound to keystrokes which must be handled by the background page.
 // They are mapped in commands.js.
 const BackgroundCommands = {
@@ -317,6 +345,27 @@ const BackgroundCommands = {
   toggleMuteTab,
   moveTabLeft: moveTab,
   moveTabRight: moveTab,
+
+  async setZoom({ tabId, registryEntry }) {
+    const zoomLevel = registryEntry.optionList[0] ?? 1;
+    const newZoom = parseFloat(zoomLevel);
+    if (!isNaN(newZoom)) {
+      chrome.tabs.setZoom(tabId, newZoom);
+    }
+  },
+  async zoomIn({ count, tabId }) {
+    const currentZoom = await chrome.tabs.getZoom(tabId);
+    const newZoom = nextZoomLevel(currentZoom, count);
+    chrome.tabs.setZoom(tabId, newZoom);
+  },
+  async zoomOut({ count, tabId }) {
+    const currentZoom = await chrome.tabs.getZoom(tabId);
+    const newZoom = nextZoomLevel(currentZoom, -count);
+    chrome.tabs.setZoom(tabId, newZoom);
+  },
+  async zoomReset({ tabId }) {
+    chrome.tabs.setZoom(tabId, 0); // setZoom of 0 sets to the tab default.
+  },
 
   async nextFrame({ count, tabId }) {
     // We're assuming that these frames are returned in the order that they appear on the page. This
@@ -858,7 +907,7 @@ async function showUpgradeMessageIfNecessary(onInstalledDetails) {
     notificationId,
     {
       type: "basic",
-      iconUrl: chrome.runtime.getURL("icons/vimium.png"),
+      iconUrl: chrome.runtime.getURL("icons/icon128.png"),
       title: "Vimium Upgrade",
       message:
         `Vimium has been upgraded to version ${currentVersion}. Click here for more information.`,
@@ -1032,6 +1081,7 @@ Object.assign(globalThis, {
   HintCoordinator,
   BackgroundCommands,
   majorVersionHasIncreased,
+  nextZoomLevel,
 });
 
 // The chrome.runtime.onStartup and onInstalled events are not fired when disabling and then
