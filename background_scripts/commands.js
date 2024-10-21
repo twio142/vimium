@@ -363,7 +363,6 @@ const Commands = {
       "suspendTab",
       "suspendAllTabs",
       "unsuspendAllTabs",
-      "openStewardBox",
       "setZoom",
       "zoomIn",
       "zoomOut",
@@ -403,7 +402,6 @@ const Commands = {
     "suspendTab",
     "suspendAllTabs",
     "unsuspendAllTabs",
-    "openStewardBox",
     "annotate",
     "hardReload",
     "setZoom",
@@ -594,7 +592,6 @@ const commandDescriptions = {
   suspendTab: ["Suspend tab", { noRepeat: true }],
   suspendAllTabs: ["Suspend all tabs in this window", { noRepeat: true }],
   unsuspendAllTabs: ["Unsuspend all tabs in this window", { noRepeat: true }],
-  openStewardBox: ["Open Steward box", { noRepeat: true }],
   annotate: ["Annotate on the current page", { noRepeat: true }],
 
   setZoom: ["Set zoom level to a given value. E.g. map zz setZoom 1.5", { background: true }],
