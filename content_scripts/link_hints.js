@@ -161,6 +161,11 @@ const COPY_MD_LINK = {
     }
   },
 };
+const SHIFT_CLICK = {
+  name: "shift-click",
+  indicator: "Shift-click link",
+  clickModifiers: { shiftKey: true, altKey: false, metaKey: false, ctrlKey: false },
+};
 const HOVER_LINK = {
   name: "hover",
   indicator: "Hover link",
@@ -183,6 +188,7 @@ const availableModes = [
   OPEN_WITH_QUEUE,
   COPY_LINK_URL,
   COPY_MD_LINK,
+  SHIFT_CLICK,
   OPEN_INCOGNITO,
   DOWNLOAD_LINK_URL,
   COPY_LINK_TEXT,
