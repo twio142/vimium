@@ -320,7 +320,19 @@ const HintCoordinator = {
   getHintDescriptors({ modeIndex, isVimiumHelpDialog }, _sender) {
     if (!DomUtils.isReady() || DomUtils.windowIsTooSmall()) return [];
 
-    const requireHref = [COPY_LINK_URL, OPEN_INCOGNITO].includes(availableModes[modeIndex]);
+    const requireHref = [
+      COPY_LINK_URL,
+      COPY_LINK_TEXT,
+      COPY_MD_LINK,
+      PASTE_IN_CURRENT_TAB,
+      PASTE_IN_NEW_TAB,
+      PASTE_IN_NEW_BG_TAB,
+      OPEN_INCOGNITO,
+    ].includes(availableModes[modeIndex]);
+    const imageMode = [
+      COPY_IMAGE_URL,
+      DOWNLOAD_IMAGE,
+    ].includes(availableModes[modeIndex]);
     // If link hints is launched within the help dialog, then we only offer hints from that frame.
     // This improves the usability of the help dialog on the options page (particularly for
     // selecting command names).
@@ -613,10 +625,22 @@ class LinkHintsMode {
 
     // NOTE(smblott) The modifier behaviour here applies only to alphabet hints.
     if (
-      ["Control", "Shift"].includes(event.key) && !Settings.get("filterLinkHints") &&
-      [OPEN_IN_CURRENT_TAB, OPEN_WITH_QUEUE, OPEN_IN_NEW_BG_TAB, OPEN_IN_NEW_FG_TAB].includes(
-        this.mode,
-      )
+      ["Alt", "Shift"].includes(event.key) && !Settings.get("filterLinkHints") &&
+      [
+        COPY_LINK_URL,
+        COPY_LINK_TEXT,
+        COPY_MD_LINK,
+        OPEN_IN_CURRENT_TAB,
+        OPEN_IN_NEW_BG_TAB,
+        OPEN_IN_NEW_FG_TAB,
+        HOVER_LINK,
+        FOCUS_LINK,
+        PASTE_IN_CURRENT_TAB,
+        PASTE_IN_NEW_TAB,
+        PASTE_IN_NEW_BG_TAB,
+        COPY_IMAGE_URL,
+        DOWNLOAD_IMAGE,
+      ].includes(this.mode)
     ) {
       // Toggle whether to open the link in a new or current tab.
       const previousMode = this.mode;
@@ -624,14 +648,69 @@ class LinkHintsMode {
 
       switch (key) {
         case "Shift":
-          this.setOpenLinkMode(
-            this.mode === OPEN_IN_CURRENT_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_CURRENT_TAB,
-          );
+          if (
+            [
+              COPY_LINK_URL,
+              COPY_LINK_TEXT,
+              COPY_MD_LINK,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(this.mode === COPY_LINK_URL ? COPY_LINK_TEXT : COPY_LINK_URL);
+          } else if (
+            [
+              OPEN_IN_CURRENT_TAB,
+              OPEN_IN_NEW_BG_TAB,
+              OPEN_IN_NEW_FG_TAB,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === OPEN_IN_CURRENT_TAB ? SHIFT_CLICK : this.mode === OPEN_WITH_QUEUE ? OPEN_IN_NEW_BG_TAB :OPEN_IN_CURRENT_TAB,
+            );
+          } else if ([HOVER_LINK, FOCUS_LINK].includes(this.mode)) {
+            this.setOpenLinkMode(this.mode === HOVER_LINK ? FOCUS_LINK : HOVER_LINK);
+          } else if (
+            [PASTE_IN_CURRENT_TAB, PASTE_IN_NEW_TAB, PASTE_IN_NEW_BG_TAB].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === PASTE_IN_CURRENT_TAB ? PASTE_IN_NEW_BG_TAB : PASTE_IN_CURRENT_TAB,
+            );
+          } else if (
+            [COPY_IMAGE_URL, DOWNLOAD_IMAGE].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === COPY_IMAGE_URL ? DOWNLOAD_IMAGE : COPY_IMAGE_URL,
+            );
+          }
           break;
-        case "Control":
-          this.setOpenLinkMode(
-            this.mode === OPEN_IN_NEW_FG_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_NEW_FG_TAB,
-          );
+        case "Alt":
+          if (
+            [
+              COPY_LINK_URL,
+              COPY_LINK_TEXT,
+              COPY_MD_LINK,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === COPY_MD_LINK ? COPY_LINK_TEXT : COPY_MD_LINK,
+            );
+          } else if (
+            [
+              OPEN_IN_CURRENT_TAB,
+              OPEN_WITH_QUEUE,
+              OPEN_IN_NEW_BG_TAB,
+              OPEN_IN_NEW_FG_TAB,
+            ].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === OPEN_IN_NEW_FG_TAB ? OPEN_IN_NEW_BG_TAB : OPEN_IN_NEW_FG_TAB,
+            );
+          } else if (
+            [PASTE_IN_CURRENT_TAB, PASTE_IN_NEW_TAB, PASTE_IN_NEW_BG_TAB].includes(this.mode)
+          ) {
+            this.setOpenLinkMode(
+              this.mode === PASTE_IN_NEW_TAB ? PASTE_IN_NEW_BG_TAB : PASTE_IN_NEW_TAB,
+            );
+          }
           break;
       }
 
