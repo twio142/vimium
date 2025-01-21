@@ -39,7 +39,13 @@ async function openUrlInCurrentTab(request) {
 
     chrome.scripting.executeScript(scriptingArgs);
   } else {
-    chrome.tabs.update(request.tabId, { url: await UrlUtils.convertToUrl(request.url) });
+    let url = request.url;
+    try {
+      url = await UrlUtils.convertToUrl(url);
+      chrome.tabs.update(request.tabId, { url });
+    } catch {
+      chrome.search.query({ disposition: "CURRENT_TAB", text: url });
+    }
   }
 }
 
@@ -48,8 +54,15 @@ async function openUrlInNewTab(request, callback) {
   if (callback == null) {
     callback = function () {};
   }
+  let url = request.url;
+  try {
+    url = await UrlUtils.convertToUrl(url);
+  } catch {
+    chrome.search.query({ disposition: "NEW_TAB", text: url });
+    return;
+  }
   const tabConfig = {
-    url: await UrlUtils.convertToUrl(request.url),
+    url,
     active: true,
     windowId: request.tab.windowId,
   };
