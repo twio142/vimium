@@ -366,6 +366,18 @@ const NormalModeCommands = {
 
     return new FocusSelector(hints, visibleInputs, selectedInputIndex);
   },
+
+  vomnibarWithSelection() {
+    let selection = window.getSelection().toString();
+    selection = selection ? " " + selection : "";
+    return Vomnibar.open(null, { query: selection, cursorAtStart: true });
+  },
+
+  vomnibarWithSelectionInNewTab() {
+    let selection = window.getSelection().toString();
+    selection = selection ? " " + selection : "";
+    return Vomnibar.open(null, { query: selection, newTab: true, cursorAtStart: true });
+  },
 };
 
 if (typeof LinkHints !== "undefined") {
