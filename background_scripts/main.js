@@ -191,7 +191,7 @@ const moveTab = function ({ count, tab, registryEntry }) {
       index: tabs[moveIndex].index,
     });
   });
-}
+};
 
 const createRepeatCommand = (command) => (function (request) {
   request.count--;
@@ -926,12 +926,13 @@ function switchTab(previous = false) {
       return;
     }
     const activeTabIdx = activeTab.index;
-    const targetTabIdx = (previous ? activeTabIdx - 1 + tabs.length : activeTabIdx + 1) % tabs.length;
+    const targetTabIdx = (previous ? activeTabIdx - 1 + tabs.length : activeTabIdx + 1) %
+      tabs.length;
     chrome.tabs.update(tabs[targetTabIdx].id, { active: true });
   });
 }
 
-function pasteIntoTab(newTab=!1) {
+function pasteIntoTab(newTab = !1) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
       chrome.scripting.executeScript({
@@ -940,7 +941,10 @@ function pasteIntoTab(newTab=!1) {
           navigator.clipboard.readText().then((content) => {
             content = content.trim();
             if (!content) return;
-            chrome.runtime.sendMessage({ handler: newTab ? "openUrlInNewTab" : "openUrlInCurrentTab", url: content });
+            chrome.runtime.sendMessage({
+              handler: newTab ? "openUrlInNewTab" : "openUrlInCurrentTab",
+              url: content,
+            });
           });
         },
         args: [newTab],
