@@ -154,6 +154,7 @@ class VomnibarUI {
     for (let i = 0, end = this.completionList.children.length; i < end; i++) {
       this.completionList.children[i].className = i === this.selection ? "vomnibarSelected" : "";
     }
+    this.selection >= 0 && this.completionList.children[this.selection].scrollIntoViewIfNeeded();
   }
 
   // Returns the user's action ("up", "down", "tab", etc, or null) based on their keypress. We
@@ -454,6 +455,23 @@ class VomnibarUI {
       this.input.focus();
       return event.stopImmediatePropagation();
     });
+
+    this.completionList.addEventListener("mouseover", (event) => {
+      const li = event.target.closest("li");
+      if (!li || !this.completionList.contains(li)) return;
+      this.selection = [...this.completionList.childNodes].indexOf(li);
+      this.updateSelection();
+    });
+
+    this.completionList.addEventListener("click", (event) => {
+      const li = event.target.closest("li");
+      if (!li || !this.completionList.contains(li)) return;
+      const idx = [...this.completionList.childNodes].indexOf(li);
+      const c = this.completions[idx];
+      this.hide(() => this.openCompletion(c, this.forceNewTab));
+      return event.stopImmediatePropagation();
+    });
+
     // A click anywhere else hides the vomnibar.
     document.addEventListener("click", () => this.hide());
   }
