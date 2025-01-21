@@ -226,8 +226,8 @@ const COPY_IMAGE_URL = {
     } else {
       HUD.show("No image to yank.", 2000);
     }
-  }
-}
+  },
+};
 const DOWNLOAD_IMAGE = {
   name: "download-image",
   indicator: "Download image",
@@ -238,7 +238,7 @@ const DOWNLOAD_IMAGE = {
       options: options,
     });
   },
-}
+};
 
 const availableModes = [
   OPEN_IN_CURRENT_TAB,
@@ -664,7 +664,11 @@ class LinkHintsMode {
             ].includes(this.mode)
           ) {
             this.setOpenLinkMode(
-              this.mode === OPEN_IN_CURRENT_TAB ? SHIFT_CLICK : this.mode === OPEN_WITH_QUEUE ? OPEN_IN_NEW_BG_TAB :OPEN_IN_CURRENT_TAB,
+              this.mode === OPEN_IN_CURRENT_TAB
+                ? SHIFT_CLICK
+                : this.mode === OPEN_WITH_QUEUE
+                ? OPEN_IN_NEW_BG_TAB
+                : OPEN_IN_CURRENT_TAB,
             );
           } else if ([HOVER_LINK, FOCUS_LINK].includes(this.mode)) {
             this.setOpenLinkMode(this.mode === HOVER_LINK ? FOCUS_LINK : HOVER_LINK);

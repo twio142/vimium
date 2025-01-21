@@ -231,7 +231,8 @@ class Brave extends BaseEngine {
 class BiliBili extends BaseEngine {
   constructor() {
     super({
-      engineUrl: "https://s.search.bilibili.com/main/suggest?func=suggest&suggest_type=accurate&sub_type=tag&main_ver=v1&term=%s",
+      engineUrl:
+        "https://s.search.bilibili.com/main/suggest?func=suggest&suggest_type=accurate&sub_type=tag&main_ver=v1&term=%s",
       regexps: ["^https?://www\\.bilibili\\.com/"],
       example: {
         searchUrl: "https://www.bilibili.com/search?keyword=%s",
