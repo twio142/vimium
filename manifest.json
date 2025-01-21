@@ -103,5 +103,31 @@
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "commands": {
+    "previousTab": {
+      "description": "Open the previous tab",
+      "suggested_key": {
+        "default": "Ctrl+J"
+      }
+    },
+    "nextTab": {
+      "description": "Open the next tab",
+      "suggested_key": {
+        "default": "Ctrl+L"
+      }
+    },
+    "visitPreviousTab": {
+      "description": "Go to the last visited tab"
+    },
+    "goBack": {
+      "description": "Go back in history"
+    },
+    "pasteIntoActiveTab": {
+      "description": "Paste clipboard contents into the current tab"
+    },
+    "pasteIntoNewTab": {
+      "description": "Paste clipboard contents into a new tab"
+    }
+  }
 }

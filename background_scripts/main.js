@@ -881,6 +881,76 @@ async function showUpgradeMessageIfNecessary(onInstalledDetails) {
   }
 }
 
+function switchTab(previous = false) {
+  chrome.tabs.query({ currentWindow: true }, (tabs) => {
+    const activeTab = tabs.find((tab) => tab.active);
+    if (!activeTab) {
+      chrome.tabs.update(tabs[0].id, { active: true });
+      return;
+    }
+    const activeTabIdx = activeTab.index;
+    const targetTabIdx = (previous ? activeTabIdx - 1 + tabs.length : activeTabIdx + 1) % tabs.length;
+    chrome.tabs.update(tabs[targetTabIdx].id, { active: true });
+  });
+}
+
+function pasteIntoTab(newTab=!1) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]) {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: (newTab) => {
+          navigator.clipboard.readText().then((content) => {
+            content = content.trim();
+            if (!content) return;
+            chrome.runtime.sendMessage({ handler: newTab ? "openUrlInNewTab" : "openUrlInCurrentTab", url: content });
+          });
+        },
+        args: [newTab],
+      });
+    }
+  });
+}
+
+chrome.commands.onCommand.addListener(function (command) {
+  switch (command) {
+    case "previousTab":
+      switchTab(true);
+      break;
+    case "nextTab":
+      switchTab();
+      break;
+    case "visitPreviousTab":
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          BackgroundCommands.visitPreviousTab({
+            count: 1,
+            tab: { id: tabs[0].id },
+          });
+        }
+      });
+      break;
+    case "goBack":
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          BackgroundCommands.goBack({
+            count: 1,
+            tab: tabs[0],
+          });
+        }
+      });
+      break;
+    case "pasteIntoActiveTab":
+      pasteIntoTab();
+      break;
+    case "pasteIntoNewTab":
+      pasteIntoTab(!0);
+      break;
+    default:
+      console.error("unrecognized command:", command);
+  }
+});
+
 async function injectContentScriptsAndCSSIntoExistingTabs() {
   const manifest = chrome.runtime.getManifest();
   const contentScriptConfig = manifest.content_scripts[0];
