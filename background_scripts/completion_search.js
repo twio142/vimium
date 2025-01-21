@@ -95,7 +95,7 @@ const CompletionSearch = {
     const query = queryTerms.join(" ").toLowerCase();
 
     // We don't complete queries which are too short: the results are usually useless.
-    if (query.length < 4) return [];
+    if ((query.length < 4 && !query.match(/[\u4E00-\u9FFF]/)) || query.length < 2) return [];
 
     // We don't complete regular URLs or Javascript URLs.
     if (queryTerms.length == 1 && await UrlUtils.isUrl(query)) return [];
