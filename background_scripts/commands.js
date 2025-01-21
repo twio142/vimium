@@ -349,6 +349,7 @@ const Commands = {
       "Vomnibar.activateBookmarks",
       "Vomnibar.activateBookmarksInNewTab",
       "Vomnibar.activateTabSelection",
+      "Vomnibar.restoreSession",
       "Vomnibar.activateEditUrl",
       "Vomnibar.activateEditUrlInNewTab",
       "vomnibarWithSelection",
@@ -620,6 +621,7 @@ const commandDescriptions = {
   "Vomnibar.activateEditUrlInNewTab": ["Edit the current URL and open in a new tab", {
     topFrame: true,
   }],
+  "Vomnibar.restoreSession": ["Open a recently closed tab", { topFrame: true }],
   "vomnibarWithSelection": ["Open vomnibar with selection", { topFrame: true }],
   "vomnibarWithSelectionInNewTab": ["Open vomnibar with selection in new tab", { topFrame: true }],
 
