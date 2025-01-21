@@ -566,7 +566,7 @@ const commandDescriptions = {
   goNext: ["Follow the link labeled next or >", { noRepeat: true }],
 
   // Navigating your history
-  goBack: ["Go back in history"],
+  goBack: ["Go back in history", { background: true }],
   goForward: ["Go forward in history"],
 
   // Navigating the URL hierarchy
