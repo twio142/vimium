@@ -555,7 +555,7 @@ const commandDescriptions = {
   "LinkHints.activateModeToOpenInNewForegroundTab": ["Open a link in a new tab & switch to it"],
   "LinkHints.activateModeWithQueue": ["Open multiple links in a new tab", { noRepeat: true }],
   "LinkHints.activateModeToOpenIncognito": ["Open a link in incognito window"],
-  "LinkHints.activateModeToDownloadLink": ["Download link url"],
+  "LinkHints.activateModeToDownloadLink": ["Download link URL"],
   "LinkHints.activateModeToCopyLinkUrl": ["Copy a link URL to the clipboard"],
 
   enterFindMode: ["Enter find mode", { noRepeat: true }],

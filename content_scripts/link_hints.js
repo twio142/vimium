@@ -115,7 +115,14 @@ const OPEN_INCOGNITO = {
 const DOWNLOAD_LINK_URL = {
   name: "download",
   indicator: "Download link URL",
-  clickModifiers: { altKey: true, ctrlKey: false, metaKey: false },
+  // clickModifiers: { altKey: true, ctrlKey: false, metaKey: false },
+  linkActivator(link, options) {
+    chrome.runtime.sendMessage({
+      handler: "downloadUrl",
+      url: link.href,
+      options: options,
+    });
+  },
 };
 const COPY_LINK_TEXT = {
   name: "copy-link-text",
@@ -321,6 +328,7 @@ const LinkHints = {
         mode = FOCUS_LINK;
         break;
     }
+    mode.options = registryEntry?.options;
 
     if ((count > 0) || (mode === OPEN_WITH_QUEUE)) {
       HintCoordinator.prepareToActivateMode(mode, function (isSuccess) {
@@ -348,8 +356,8 @@ const LinkHints = {
   activateModeToOpenIncognito(count) {
     this.activateMode(count, { mode: OPEN_INCOGNITO });
   },
-  activateModeToDownloadLink(count) {
-    this.activateMode(count, { mode: DOWNLOAD_LINK_URL });
+  activateModeToDownloadLink(count, { registryEntry }) {
+    this.activateMode(count, { mode: DOWNLOAD_LINK_URL, registryEntry });
   },
 };
 
@@ -712,7 +720,7 @@ class LinkHintsMode {
               clickEl.focus();
             }
             HintCoordinator.lastClickedElementRef = new WeakRef(clickEl);
-            return linkActivator(clickEl);
+            return linkActivator(clickEl, this.mode.options);
           }
         }
       });

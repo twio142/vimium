@@ -662,6 +662,20 @@ const sendRequestHandlers = {
   selectSpecificTab,
   createMark: Marks.create.bind(Marks),
   gotoMark: Marks.goto.bind(Marks),
+  downloadUrl(request) {
+    let options = { url: request.url };
+    switch (request.options?.save_as) {
+      case "true":
+        options.saveAs = true;
+        break;
+      case "false":
+        options.saveAs = false;
+    }
+    if (request.options?.conflict_action) {
+      options.conflictAction = request.options.conflict_action;
+    }
+    return chrome.downloads.download(options);
+  },
   // Send a message to all frames in the current tab. If request.frameId is provided, then send
   // messages to only the frame with that ID.
   sendMessageToFrames(request, sender) {
