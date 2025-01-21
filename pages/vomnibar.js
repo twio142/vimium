@@ -269,8 +269,8 @@ class VomnibarUI {
     const waitingOnCompletions = this.completions.length == 0;
     const completion = this.completions[this.selection];
 
-    const openInNewTab = this.forceNewTab || event.shiftKey || event.ctrlKey || event.altKey ||
-      event.metaKey;
+    const openInNewBackgroundTab = event.shiftKey;
+    const openInNewTab = this.forceNewTab != (event.altKey || event.metaKey);
 
     // If the user types something and hits enter without selecting a completion from the list,
     // then:
@@ -296,7 +296,7 @@ class VomnibarUI {
         // TODO(philc):
         const isUrl = await UrlUtils.isUrl(query);
         if (isUrl) {
-          await this.launchUrl(query, openInNewTab);
+          await this.launchUrl(query, openInNewTab, openInNewBackgroundTab);
         } else {
           this.hide(() =>
             chrome.runtime.sendMessage({
@@ -309,9 +309,9 @@ class VomnibarUI {
       }
     } else if (isPrimarySearchSuggestion(completion)) {
       query = UrlUtils.createSearchUrl(query, completion.searchUrl);
-      this.hide(() => this.launchUrl(query, openInNewTab));
+      this.hide(() => this.launchUrl(query, openInNewTab, openInNewBackgroundTab));
     } else {
-      this.hide(() => this.openCompletion(completion, openInNewTab));
+      this.hide(() => this.openCompletion(completion, openInNewTab, openInNewBackgroundTab));
     }
   }
 
@@ -406,16 +406,27 @@ class VomnibarUI {
     this.input.focus();
   }
 
-  openCompletion(completion, openInNewTab) {
+  openCompletion(completion, openInNewTab, openInNewBackgroundTab) {
     if (completion.description == "tab") {
       chrome.runtime.sendMessage({ handler: "selectSpecificTab", id: completion.tabId });
+    } else if (completion.description == "window") {
+      chrome.runtime.sendMessage({
+        handler: "moveTabToWindow",
+        tabId: completion.tabId,
+        windowId: completion.windowId,
+      });
+    } else if (completion.description == "session") {
+      chrome.runtime.sendMessage({
+        handler: "restoreSession",
+        id: completion.sessionId,
+      });
     } else {
-      this.launchUrl(completion.url, openInNewTab);
+      this.launchUrl(completion.url, openInNewTab, openInNewBackgroundTab);
     }
   }
 
-  async launchUrl(url, openInNewTab) {
-    // If the URL is a bookmarklet (so, prefixed with "javascript:"), then always open it in the
+  async launchUrl(url, openInNewTab, background) {
+    // If the URL is a bookmarklet (so, prefixed with "javascript:"), then we always open it in the
     // current tab.
     if (openInNewTab && UrlUtils.hasJavascriptProtocol(url)) {
       openInNewTab = false;
@@ -423,6 +434,7 @@ class VomnibarUI {
     await chrome.runtime.sendMessage({
       handler: openInNewTab ? "openUrlInNewTab" : "openUrlInCurrentTab",
       url,
+      active: !background,
     });
   }
 
