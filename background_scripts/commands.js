@@ -335,6 +335,7 @@ const Commands = {
       "LinkHints.activateModeToDownloadLink",
       "LinkHints.activateModeToOpenIncognito",
       "LinkHints.activateModeToCopyLinkUrl",
+      "LinkHints.activateModeToCopyImageUrl",
       "goPrevious",
       "goNext",
       "nextFrame",
@@ -405,6 +406,7 @@ const Commands = {
     "Vomnibar.activateEditUrlInNewTab",
     "LinkHints.activateModeToOpenIncognito",
     "LinkHints.activateModeToCopyLinkUrl",
+    "LinkHints.activateModeToCopyImageUrl",
     "goNext",
     "goPrevious",
     "Marks.activateCreateMode",
@@ -557,6 +559,7 @@ const commandDescriptions = {
   "LinkHints.activateModeToOpenIncognito": ["Open a link in incognito window"],
   "LinkHints.activateModeToDownloadLink": ["Download link URL"],
   "LinkHints.activateModeToCopyLinkUrl": ["Copy a link URL to the clipboard"],
+  "LinkHints.activateModeToCopyImageUrl": ["Copy an image URL to the clipboard"],
 
   enterFindMode: ["Enter find mode", { noRepeat: true }],
   performFind: ["Cycle forward to the next find match"],
