@@ -390,6 +390,7 @@ if (typeof LinkHints !== "undefined") {
     "LinkHints.activateModeToOpenIncognito": LinkHints.activateModeToOpenIncognito.bind(LinkHints),
     "LinkHints.activateModeToDownloadLink": LinkHints.activateModeToDownloadLink.bind(LinkHints),
     "LinkHints.activateModeToCopyLinkUrl": LinkHints.activateModeToCopyLinkUrl.bind(LinkHints),
+    "LinkHints.activateModeToCopyImageUrl": LinkHints.activateModeToCopyImageUrl.bind(LinkHints),
   });
 }
 

@@ -214,6 +214,31 @@ const FOCUS_LINK = {
     link.focus();
   },
 };
+const COPY_IMAGE_URL = {
+  name: "copy-image-url",
+  indicator: "Copy image URL",
+  linkActivator(link) {
+    if (link.src != null) {
+      let url = link.src;
+      HUD.copyToClipboard(url);
+      if (28 < url.length) url = url.slice(0, 26) + "....";
+      HUD.show(`Yanked ${url}`, 2000);
+    } else {
+      HUD.show("No image to yank.", 2000);
+    }
+  }
+}
+const DOWNLOAD_IMAGE = {
+  name: "download-image",
+  indicator: "Download image",
+  linkActivator(link, options) {
+    chrome.runtime.sendMessage({
+      handler: "downloadUrl",
+      url: link.src,
+      options: options,
+    });
+  },
+}
 
 const availableModes = [
   OPEN_IN_CURRENT_TAB,
@@ -231,6 +256,8 @@ const availableModes = [
   COPY_LINK_TEXT,
   HOVER_LINK,
   FOCUS_LINK,
+  COPY_IMAGE_URL,
+  DOWNLOAD_IMAGE,
 ];
 
 const HintCoordinator = {
@@ -300,7 +327,7 @@ const HintCoordinator = {
     if (isVimiumHelpDialog && !globalThis.isVimiumHelpDialog) {
       this.localHints = [];
     } else {
-      this.localHints = LocalHints.getLocalHints(requireHref);
+      this.localHints = LocalHints.getLocalHints(requireHref, imageMode);
     }
     this.localHintDescriptors = this.localHints.map(({ linkText }, localIndex) => (
       new HintDescriptor({
@@ -397,6 +424,12 @@ const LinkHints = {
       case "focus":
         mode = FOCUS_LINK;
         break;
+      case "paste":
+        mode = PASTE_IN_CURRENT_TAB;
+        break;
+      case "download-image":
+        mode = DOWNLOAD_IMAGE;
+        break;
     }
     mode.options = registryEntry?.options;
 
@@ -419,6 +452,9 @@ const LinkHints = {
   },
   activateModeToCopyLinkUrl(count, { registryEntry }) {
     this.activateMode(count, { mode: COPY_LINK_URL, registryEntry });
+  },
+  activateModeToCopyImageUrl(count, { registryEntry }) {
+    this.activateMode(count, { mode: COPY_IMAGE_URL, registryEntry });
   },
   activateModeWithQueue() {
     this.activateMode(1, { mode: OPEN_WITH_QUEUE });
@@ -1343,6 +1379,25 @@ const LocalHints = {
     return hints;
   },
 
+  getLocalHintsForImage(element) {
+    const tagName = element.tagName.toLowerCase?.() || "";
+    const hints = [];
+    if (tagName == "img" && element.offsetWidth > 24 && element.offsetHeight > 24) {
+      const clientRect = DomUtils.getVisibleClientRect(element, true);
+      if (clientRect !== null) {
+        const hint = new LocalHint({
+          element,
+          rect: clientRect,
+          secondClassCitizen: false,
+          possibleFalsePositive: false,
+          reason: null,
+        });
+        hints.push(hint);
+      }
+    }
+
+    return hints;
+  },
   //
   // Returns element at a given (x,y) with an optional root element.
   // If the returned element is a shadow root, descend into that shadow root recursively until we
@@ -1372,7 +1427,7 @@ const LocalHints = {
   // rects for the whole element.
   // - requireHref: true if the hintable element must have an href, because an href is required for
   //   commands like "LinkHints.activateModeToCopyLinkUrl".
-  getLocalHints(requireHref) {
+  getLocalHints(requireHref, imageMode) {
     // We need documentElement to be ready in order to find links.
     if (!document.documentElement) return [];
 
@@ -1398,7 +1453,10 @@ const LocalHints = {
     // provide this, so it's necessary to check whether elements are clickable in order, as we do
     // below.
     for (const element of Array.from(elements)) {
-      if (!requireHref || !!element.href) {
+      if (imageMode) {
+        const hints = this.getLocalHintsForImage(element);
+        localHints.push(...hints);
+      } else if (!requireHref || !!element.href) {
         const hints = this.getLocalHintsForElement(element);
         localHints.push(...hints);
       }
