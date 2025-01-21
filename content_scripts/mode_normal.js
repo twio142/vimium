@@ -167,6 +167,32 @@ const NormalModeCommands = {
     });
   },
 
+  copyCurrentTitle() {
+    chrome.runtime.sendMessage(
+      { handler: "getCurrentTabTitle" },
+      function (title) {
+        HUD.copyToClipboard(title);
+        if (28 < title.length) {
+          title = title.slice(0, 26) + "....";
+        }
+        HUD.show(`Yanked ${title}`, 2000);
+      },
+    );
+  },
+
+  copyCurrentMDLink() {
+    chrome.runtime.sendMessage(
+      { handler: "getCurrentTabMDLink" },
+      function (link) {
+        HUD.copyToClipboard(link);
+        if (28 < link.length) {
+          link = link.slice(0, 26) + "....";
+        }
+        HUD.show(`Yanked ${link}`, 2000);
+      },
+    );
+  },
+
   openCopiedUrlInNewTab(count) {
     HUD.pasteFromClipboard((url) =>
       chrome.runtime.sendMessage({ handler: "openUrlInNewTab", url, count })
