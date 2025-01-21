@@ -161,6 +161,40 @@ const COPY_MD_LINK = {
     }
   },
 };
+const PASTE_IN_CURRENT_TAB = {
+  name: "paste-curr",
+  indicator: "Paste link in current tab",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInCurrentTab",
+        url: link.href,
+      });
+  },
+};
+const PASTE_IN_NEW_TAB = {
+  name: "paste-new",
+  indicator: "Paste link in new tab",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInNewTab",
+        url: link.href,
+      });
+  },
+};
+const PASTE_IN_NEW_BG_TAB = {
+  name: "paste-new-bg",
+  indicator: "Paste link in new background tab",
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInNewTab",
+        url: link.href,
+        active: false,
+      });
+  },
+};
 const SHIFT_CLICK = {
   name: "shift-click",
   indicator: "Shift-click link",
@@ -188,6 +222,9 @@ const availableModes = [
   OPEN_WITH_QUEUE,
   COPY_LINK_URL,
   COPY_MD_LINK,
+  PASTE_IN_CURRENT_TAB,
+  PASTE_IN_NEW_TAB,
+  PASTE_IN_NEW_BG_TAB,
   SHIFT_CLICK,
   OPEN_INCOGNITO,
   DOWNLOAD_LINK_URL,
