@@ -88,7 +88,14 @@ const OPEN_IN_NEW_FG_TAB = {
 const OPEN_WITH_QUEUE = {
   name: "queue",
   indicator: "Open multiple links in new tabs",
-  clickModifiers: { metaKey: isMac, ctrlKey: !isMac },
+  linkActivator(link) {
+    link.href != null &&
+      chrome.runtime.sendMessage({
+        handler: "openUrlInNewTab",
+        url: link.href,
+        active: false,
+      });
+  },
 };
 const COPY_LINK_URL = {
   name: "link",
