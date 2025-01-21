@@ -29,6 +29,7 @@ class Vomnibar {
       newTab: false,
       selectFirst: false,
       keyword: null,
+      cursorAtStart: false,
     };
     Object.assign(options, userOptions);
 
@@ -40,6 +41,7 @@ class Vomnibar {
     this.vomnibarUI.setInitialSelectionValue(options.selectFirst ? 0 : -1);
     this.vomnibarUI.setForceNewTab(options.newTab);
     this.vomnibarUI.setQuery(options.query);
+    this.vomnibarUI.moveCursorToStart(options.cursorAtStart);
     this.vomnibarUI.setActiveUserSearchEngine(UserSearchEngines.keywordToEngine[options.keyword]);
     // Use await here for vomnibar_test.js, so that this page doesn't get unloaded while a test is
     // running.
@@ -89,6 +91,9 @@ class VomnibarUI {
   setCompleterName(name) {
     this.completerName = name;
     this.reset();
+  }
+  moveCursorToStart(cursorAtStart) {
+    if (cursorAtStart) this.input.setSelectionRange(0, 0);
   }
 
   // True if the user has entered the keyword of one of their custom search engines.

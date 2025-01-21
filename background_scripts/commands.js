@@ -350,6 +350,8 @@ const Commands = {
       "Vomnibar.activateTabSelection",
       "Vomnibar.activateEditUrl",
       "Vomnibar.activateEditUrlInNewTab",
+      "vomnibarWithSelection",
+      "vomnibarWithSelectionInNewTab",
     ],
     findCommands: [
       "enterFindMode",
@@ -615,6 +617,8 @@ const commandDescriptions = {
   "Vomnibar.activateEditUrlInNewTab": ["Edit the current URL and open in a new tab", {
     topFrame: true,
   }],
+  "vomnibarWithSelection": ["Open vomnibar with selection", { topFrame: true }],
+  "vomnibarWithSelectionInNewTab": ["Open vomnibar with selection in new tab", { topFrame: true }],
 
   nextFrame: ["Select the next frame on the page", { background: true }],
   mainFrame: ["Select the page's main/top frame", { topFrame: true, noRepeat: true }],
