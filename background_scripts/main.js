@@ -586,6 +586,12 @@ const sendRequestHandlers = {
   getCurrentTabUrl({ tab }) {
     return tab.url;
   },
+  getCurrentTabTitle({ tab }) {
+    return tab.title;
+  },
+  getCurrentTabMDLink({ tab }) {
+    return `[${tab.title || tab.url}](${tab.url})`;
+  },
   openUrlInNewTab: createRepeatCommand((request, callback) =>
     TabOperations.openUrlInNewTab(request, callback)
   ),
