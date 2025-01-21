@@ -145,6 +145,22 @@ const COPY_LINK_TEXT = {
     }
   },
 };
+const COPY_MD_LINK = {
+  name: "copy-md-link",
+  indicator: "Copy markdown link",
+  linkActivator(link) {
+    if (link.href != null) {
+      let text = `[${link.textContent.trim()}](${link.href})`;
+      HUD.copyToClipboard(text);
+      if (28 < text.length) {
+        text = text.slice(0, 26) + "....";
+      }
+      HUD.showForDuration(`Yanked ${text}`, 2000);
+    } else {
+      HUD.showForDuration("No link to yank.", 2000);
+    }
+  },
+};
 const HOVER_LINK = {
   name: "hover",
   indicator: "Hover link",
@@ -166,6 +182,7 @@ const availableModes = [
   OPEN_IN_NEW_FG_TAB,
   OPEN_WITH_QUEUE,
   COPY_LINK_URL,
+  COPY_MD_LINK,
   OPEN_INCOGNITO,
   DOWNLOAD_LINK_URL,
   COPY_LINK_TEXT,
@@ -328,6 +345,9 @@ const LinkHints = {
       case "copy-text":
         mode = COPY_LINK_TEXT;
         break;
+      case "copy-md-link":
+        mode = COPY_MD_LINK;
+        break;
       case "hover":
         mode = HOVER_LINK;
         break;
@@ -354,8 +374,8 @@ const LinkHints = {
   activateModeToOpenInNewForegroundTab(count) {
     this.activateMode(count, { mode: OPEN_IN_NEW_FG_TAB });
   },
-  activateModeToCopyLinkUrl(count) {
-    this.activateMode(count, { mode: COPY_LINK_URL });
+  activateModeToCopyLinkUrl(count, { registryEntry }) {
+    this.activateMode(count, { mode: COPY_LINK_URL, registryEntry });
   },
   activateModeWithQueue() {
     this.activateMode(1, { mode: OPEN_WITH_QUEUE });
