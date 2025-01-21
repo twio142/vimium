@@ -372,6 +372,7 @@ const Commands = {
       "removeTab",
       "restoreTab",
       "moveTabToNewWindow",
+      "openTabInIncognito",
       "closeTabsOnLeft",
       "closeTabsOnRight",
       "closeOtherTabs",
@@ -538,6 +539,7 @@ const commandDescriptions = {
   copyCurrentMDLink: ["Copy the markdown link to the clipboard", { noRepeat: true }],
   openCopiedUrlInCurrentTab: ["Open the clipboard's URL in the current tab", { noRepeat: true }],
   openCopiedUrlInNewTab: ["Open the clipboard's URL in a new tab", { repeatLimit: 20 }],
+  openTabInIncognito: ["Open tab in incognito window"],
 
   enterInsertMode: ["Enter insert mode", { noRepeat: true }],
   passNextKey: ["Pass the next key to the page"],

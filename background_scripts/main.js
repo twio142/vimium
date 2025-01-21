@@ -604,6 +604,23 @@ const sendRequestHandlers = {
       url: await UrlUtils.convertToUrl(request.url),
     });
   },
+  openTabInIncognito({ tab, count }) {
+    if (tab.incognito) return;
+    chrome.tabs.query({ currentWindow: true }, function (tabs) {
+      const activeTabIndex = tab.index;
+      const startTabIndex = Math.max(
+        0,
+        Math.min(activeTabIndex, tabs.length - count),
+      );
+      tabs = tabs.slice(startTabIndex, startTabIndex + count);
+      return chrome.windows.create({
+        url: tabs.map((t) => {
+          return t.url;
+        }),
+        incognito: true,
+      });
+    });
+  },
   openUrlInCurrentTab: TabOperations.openUrlInCurrentTab,
   openOptionsPageInNewTab(request) {
     return chrome.tabs.create({
