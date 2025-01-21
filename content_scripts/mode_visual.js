@@ -318,11 +318,14 @@ class VisualMode extends KeyHandlerMode {
       _name: `${this.id}/enter/click`,
       // Yank on <Enter>.
       keypress: (event) => {
-        if (event.key === "Enter") {
-          if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-            this.yank();
-            return this.suppressEvent;
-          }
+        if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && event.key === "Enter") {
+          this.shouldRetainSelectionOnExit = true;
+          this.exit();
+          return this.suppressEvent;
+        } else if (!event.metaKey && !event.ctrlKey && !event.altKey && event.code === "KeyO") {
+            this.shouldRetainSelectionOnExit = true;
+            this.exit();
+            return NormalModeCommands.vomnibarWithSelection();
         }
         return this.continueBubbling;
       },
