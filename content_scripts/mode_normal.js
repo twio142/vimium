@@ -205,6 +205,10 @@ const NormalModeCommands = {
     );
   },
 
+  openTabInIncognito() {
+    chrome.runtime.sendMessage({ handler: "openTabInIncognito" });
+  },
+
   // Mode changes.
   enterInsertMode() {
     // If a focusable element receives the focus, then we exit and leave the permanently-installed
