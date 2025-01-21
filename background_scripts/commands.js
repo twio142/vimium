@@ -352,6 +352,7 @@ const Commands = {
       "Vomnibar.restoreSession",
       "Vomnibar.activateEditUrl",
       "Vomnibar.activateEditUrlInNewTab",
+      "Vomnibar.moveTabToWindow",
       "vomnibarWithSelection",
       "vomnibarWithSelectionInNewTab",
     ],
@@ -481,6 +482,7 @@ const defaultKeyMappings = {
   "B": "Vomnibar.activateBookmarksInNewTab",
   "ge": "Vomnibar.activateEditUrl",
   "gE": "Vomnibar.activateEditUrlInNewTab",
+  "gw": "Vomnibar.moveTabToWindow",
 
   // Navigating history
   "H": "goBack",
@@ -622,6 +624,7 @@ const commandDescriptions = {
     topFrame: true,
   }],
   "Vomnibar.restoreSession": ["Open a recently closed tab", { topFrame: true }],
+  "Vomnibar.moveTabToWindow": ["Move current tab to an existing window", { topFrame: true }],
   "vomnibarWithSelection": ["Open vomnibar with selection", { topFrame: true }],
   "vomnibarWithSelectionInNewTab": ["Open vomnibar with selection in new tab", { topFrame: true }],
 

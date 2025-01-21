@@ -23,6 +23,7 @@ const completionSources = {
   history: new HistoryCompleter(),
   domains: new DomainCompleter(),
   tabs: new TabCompleter(),
+  windows: new WindowCompleter(),
   recentlyClosed: new RecentlyClosedTabCompleter(),
   searchEngines: new SearchEngineCompleter(),
 };
@@ -33,11 +34,13 @@ const completers = {
     completionSources.history,
     completionSources.domains,
     completionSources.tabs,
+    completionSources.windows,
     completionSources.searchEngines,
   ]),
   bookmarks: new MultiCompleter([completionSources.bookmarks]),
   tabs: new MultiCompleter([completionSources.tabs]),
   recentlyClosed: new MultiCompleter([completionSources.recentlyClosed]),
+  windows: new MultiCompleter([completionSources.windows]),
 };
 
 // A query dictionary for `chrome.tabs.query` that will return only the visible tabs.
@@ -163,7 +166,18 @@ async function selectSpecificTab(request) {
   await chrome.tabs.update(request.id, { active: true });
 }
 
-function moveTab({ count, tab, registryEntry }) {
+//
+// Move the tab with request.tabId to the window with request.windowId
+//
+const moveTabToWindow = (request) => {
+  // must focus window first, otherwise focus will shift to address bar
+  chrome.windows.update(request.windowId, { focused: true });
+  chrome.tabs.move(request.tabId, { windowId: request.windowId, index: -1 }, (tab) => {
+    chrome.tabs.update(tab.id, { active: true });
+  });
+};
+
+const moveTab = function ({ count, tab, registryEntry }) {
   if (registryEntry.command === "moveTabLeft") {
     count = -count;
   }
@@ -668,6 +682,7 @@ const sendRequestHandlers = {
   nextFrame: BackgroundCommands.nextFrame,
   selectSpecificTab,
   restoreSession,
+  moveTabToWindow,
   createMark: Marks.create.bind(Marks),
   gotoMark: Marks.goto.bind(Marks),
   downloadUrl(request) {
