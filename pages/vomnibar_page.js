@@ -4,61 +4,52 @@
 // the page, and simplify key handling in vimium_frontend.js
 //
 
+import "../lib/types.js";
 import "../lib/utils.js";
 import "../lib/url_utils.js";
 import "../lib/settings.js";
 import "../lib/keyboard_utils.js";
 import "../lib/dom_utils.js";
 import "../lib/handler_stack.js";
-import "./ui_component_server.js";
+import * as UIComponentMessenger from "./ui_component_messenger.js";
+import * as userSearchEngines from "../background_scripts/user_search_engines.js";
 
-class Vomnibar {
-  vomnibarUI; // the dialog instance for this window
+export let ui; // An instance of VomnibarUI.
 
-  getUI() {
-    return this.vomnibarUI;
+// Used for tests.
+export function reset() {
+  ui = null;
+}
+
+export async function activate(options) {
+  Utils.assertType(VomnibarShowOptions, options || {});
+  await Settings.onLoaded();
+  userSearchEngines.set(Settings.get("searchEngines"));
+
+  const defaults = {
+    completer: "omni",
+    query: "",
+    newTab: false,
+    selectFirst: false,
+    keyword: null,
+    cursorAtStart: false,
+  };
+
+  options = Object.assign(defaults, options);
+
+  if (ui == null) {
+    ui = new VomnibarUI();
   }
-
-  async activate(userOptions) {
-    await Settings.onLoaded();
-    UserSearchEngines.set(Settings.get("searchEngines"));
-
-    const options = {
-      completer: "omni",
-      query: "",
-      newTab: false,
-      selectFirst: false,
-      keyword: null,
-      cursorAtStart: false,
-    };
-    Object.assign(options, userOptions);
-
-    if (this.vomnibarUI == null) {
-      this.vomnibarUI = new VomnibarUI();
-    }
-    this.vomnibarUI.setCompleterName(options.completer);
-    this.vomnibarUI.refreshCompletions();
-    this.vomnibarUI.setInitialSelectionValue(options.selectFirst ? 0 : -1);
-    this.vomnibarUI.setForceNewTab(options.newTab);
-    this.vomnibarUI.setQuery(options.query);
-    this.vomnibarUI.moveCursorToStart(options.cursorAtStart);
-    this.vomnibarUI.setActiveUserSearchEngine(UserSearchEngines.keywordToEngine[options.keyword]);
-    // Use await here for vomnibar_test.js, so that this page doesn't get unloaded while a test is
-    // running.
-    await this.vomnibarUI.update();
-  }
-
-  hide() {
-    if (this.vomnibarUI) {
-      this.vomnibarUI.hide();
-    }
-  }
-
-  onHidden() {
-    if (this.vomnibarUI) {
-      this.vomnibarUI.onHidden();
-    }
-  }
+  ui.setCompleterName(options.completer);
+  ui.refreshCompletions();
+  ui.setInitialSelectionValue(options.selectFirst ? 0 : -1);
+  ui.setForceNewTab(options.newTab);
+  ui.setQuery(options.query);
+  ui.moveCursorToStart(options.cursorAtStart);
+  ui.setActiveUserSearchEngine(userSearchEngines.keywordToEngine[options.keyword]);
+  // Use await here for vomnibar_test.js, so that this page doesn't get unloaded while a test is
+  // running.
+  await ui.update();
 }
 
 class VomnibarUI {
@@ -112,7 +103,7 @@ class VomnibarUI {
   hide(onHiddenCallback = null) {
     this.onHiddenCallback = onHiddenCallback;
     this.input.blur();
-    UIComponentServer.postMessage("hide");
+    UIComponentMessenger.postMessage({ name: "hide" });
     this.reset();
   }
 
@@ -152,7 +143,7 @@ class VomnibarUI {
 
     // Highlight the selected entry, and only the selected entry.
     for (let i = 0, end = this.completionList.children.length; i < end; i++) {
-      this.completionList.children[i].className = i === this.selection ? "vomnibarSelected" : "";
+      this.completionList.children[i].className = i === this.selection ? "selected" : "";
     }
     this.selection >= 0 && this.completionList.children[this.selection].scrollIntoViewIfNeeded();
   }
@@ -398,8 +389,8 @@ class VomnibarUI {
     const keyword = parts[0];
     if (parts.length <= 1) return null;
     // Don't match queries for built-in properties like "constructor". See #4396.
-    if (Object.hasOwn(UserSearchEngines.keywordToEngine, keyword)) {
-      return UserSearchEngines.keywordToEngine[keyword];
+    if (Object.hasOwn(userSearchEngines.keywordToEngine, keyword)) {
+      return userSearchEngines.keywordToEngine[keyword];
     }
     return null;
   }
@@ -486,19 +477,22 @@ class VomnibarUI {
 let vomnibarInstance;
 
 function init() {
-  vomnibarInstance = new Vomnibar();
-
-  UIComponentServer.registerHandler(function (event) {
-    switch (event.data.name != null ? event.data.name : event.data) {
+  UIComponentMessenger.init();
+  UIComponentMessenger.registerHandler(function (event) {
+    switch (event.data.name) {
       case "hide":
-        vomnibarInstance.hide();
+        ui?.hide();
         break;
       case "hidden":
-        vomnibarInstance.onHidden();
+        ui?.onHidden();
         break;
       case "activate":
-        vomnibarInstance.activate(event.data);
+        const options = Object.assign({}, event.data);
+        delete options.name;
+        activate(options);
         break;
+      default:
+        Utils.assert(false, "Unrecognized message type.", event.data);
     }
   });
 }
@@ -512,5 +506,3 @@ if (!testEnv) {
   });
   init();
 }
-
-export { Vomnibar };

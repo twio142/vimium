@@ -1,3 +1,26 @@
+import "../lib/utils.js";
+import "../lib/settings.js";
+import "../lib/url_utils.js";
+import "../background_scripts/tab_recency.js";
+import * as bgUtils from "../background_scripts/bg_utils.js";
+import "../background_scripts/all_commands.js";
+import { Commands } from "../background_scripts/commands.js";
+import * as exclusions from "../background_scripts/exclusions.js";
+import "../background_scripts/completion_engines.js";
+import "../background_scripts/completion_search.js";
+import "../background_scripts/completion.js";
+import "../background_scripts/tab_operations.js";
+import * as marks from "../background_scripts/marks.js";
+
+import {
+  BookmarkCompleter,
+  DomainCompleter,
+  HistoryCompleter,
+  MultiCompleter,
+  SearchEngineCompleter,
+  TabCompleter,
+} from "./completion.js";
+
 // NOTE(philc): This file has many superfluous return statements in its functions, as a result of
 // converting from coffeescript to es6. Many can be removed, but I didn't take the time to
 // diligently track down precisely which return statements could be removed when I was doing the
@@ -45,7 +68,7 @@ const completers = {
 
 // A query dictionary for `chrome.tabs.query` that will return only the visible tabs.
 const visibleTabsQueryArgs = { currentWindow: true };
-if (BgUtils.isFirefox()) {
+if (bgUtils.isFirefox()) {
   // Only Firefox supports hidden tabs.
   visibleTabsQueryArgs.hidden = false;
 }
@@ -209,7 +232,7 @@ function nextZoomLevel(currentZoom, steps) {
   const firefoxLevels = [0.3, 0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.2, 1.33, 1.5, 1.7, 2, 2.4, 3, 4, 5];
 
   let zoomLevels = chromeLevels; // Chrome by default
-  if (BgUtils.isFirefox()) {
+  if (bgUtils.isFirefox()) {
     zoomLevels = firefoxLevels;
   }
 
@@ -327,7 +350,7 @@ const BackgroundCommands = {
     await forCountTabs(count, tab, (tab) => {
       // In Firefox, Ctrl-W will not close a pinned tab, but on Chrome, it will. We try to be
       // consistent with each browser's UX for pinned tabs.
-      if (tab.pinned && BgUtils.isFirefox()) return;
+      if (tab.pinned && bgUtils.isFirefox()) return;
       chrome.tabs.remove(tab.id);
     });
   },
@@ -410,8 +433,8 @@ const BackgroundCommands = {
   },
 
   async visitPreviousTab({ count, tab }) {
-    await BgUtils.tabRecency.init();
-    let tabIds = BgUtils.tabRecency.getTabsByRecency();
+    await bgUtils.tabRecency.init();
+    let tabIds = bgUtils.tabRecency.getTabsByRecency();
     tabIds = tabIds.filter((tabId) => tabId !== tab.id);
     if (tabIds.length > 0) {
       const id = tabIds[(count - 1) % tabIds.length];
@@ -538,14 +561,13 @@ const HintCoordinator = {
   async prepareToActivateLinkHintsMode(
     tabId,
     originatingFrameId,
-    { modeIndex, isVimiumHelpDialog, isVimiumOptionsPage },
+    { modeIndex, requestedByHelpDialog, isExtensionPage },
   ) {
     const frameIds = await getFrameIdsForTab(tabId);
-    // If link hints was triggered on the Options page, or the Vimium help dialog (which is shown
-    // inside an iframe), we cannot directly retrieve those frameIds using the getFrameIdsForTab.
-    // However, as a workaround, if those pages were the pages activating hints, their frameId is
-    // equal to originatingFrameId
-    const isExtensionPage = isVimiumHelpDialog || isVimiumOptionsPage;
+    // If link hints was triggered on a Vimium extension page (like the vimium help dialog or
+    // options page), we cannot directly retrieve the frameIds for those pages using the
+    // getFrameIdsForTab. However, as a workaround, if those pages were the pages activating hints,
+    // their frameId is equal to originatingFrameId.
     if (isExtensionPage && !frameIds.includes(originatingFrameId)) {
       frameIds.push(originatingFrameId);
     }
@@ -557,7 +579,7 @@ const HintCoordinator = {
           handler: "linkHintsMessage",
           messageType: "getHintDescriptors",
           modeIndex,
-          isVimiumHelpDialog,
+          requestedByHelpDialog,
         },
         { frameId },
       );
@@ -683,8 +705,8 @@ const sendRequestHandlers = {
   selectSpecificTab,
   restoreSession,
   moveTabToWindow,
-  createMark: Marks.create.bind(Marks),
-  gotoMark: Marks.goto.bind(Marks),
+  createMark: Marks.create,
+  gotoMark: Marks.goto,
   downloadUrl(request) {
     let options = { url: request.url };
     switch (request.options?.save_as) {
@@ -716,7 +738,7 @@ const sendRequestHandlers = {
   async initializeFrame(request, sender) {
     // Check whether the extension is enabled for the top frame's URL, rather than the URL of the
     // specific frame that sent this request.
-    const enabledState = Exclusions.isEnabledForUrl(sender.tab.url);
+    const enabledState = exclusions.isEnabledForUrl(sender.tab.url);
 
     const isTopFrame = sender.frameId == 0;
     if (isTopFrame) {
@@ -744,7 +766,7 @@ const sendRequestHandlers = {
         },
       };
 
-      if (BgUtils.isFirefox()) {
+      if (bgUtils.isFirefox()) {
         // Only Firefox supports SVG icons.
         iconSet = {
           "enabled": "../icons/action_enabled.svg",
@@ -757,8 +779,8 @@ const sendRequestHandlers = {
     }
 
     const response = Object.assign({
-      isFirefox: BgUtils.isFirefox(),
-      firefoxVersion: await BgUtils.getFirefoxVersion(),
+      isFirefox: bgUtils.isFirefox(),
+      firefoxVersion: await bgUtils.getFirefoxVersion(),
       frameId: sender.frameId,
     }, enabledState);
 
@@ -767,8 +789,8 @@ const sendRequestHandlers = {
 
   async getBrowserInfo() {
     return {
-      isFirefox: BgUtils.isFirefox(),
-      firefoxVersion: await BgUtils.getFirefoxVersion(),
+      isFirefox: bgUtils.isFirefox(),
+      firefoxVersion: await bgUtils.getFirefoxVersion(),
     };
   },
 
@@ -1050,7 +1072,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     // NOTE(philc): 2023-06-16: we do not install the content scripts in all tabs on Firefox.
     // I believe this is because Firefox does this already. See https://stackoverflow.com/a/37132144
     // for commentary.
-    !BgUtils.isFirefox() &&
+    !bgUtils.isFirefox() &&
     (["chrome_update", "shared_module_update"].includes(details.reason));
   if (shouldInjectContentScripts) injectContentScriptsAndCSSIntoExistingTabs();
 

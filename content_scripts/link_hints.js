@@ -306,18 +306,21 @@ const HintCoordinator = {
       }
     });
     this.onExit = [onExit];
+    const protocol = window.location.protocol;
+    // chrome-extension, moz-extension (Firefox), extension (Edge).
+    const isExtensionPage = protocol.endsWith("extension");
     chrome.runtime.sendMessage({
       handler: "prepareToActivateLinkHintsMode",
       modeIndex: availableModes.indexOf(mode),
-      isVimiumHelpDialog: globalThis.isVimiumHelpDialog,
-      isVimiumOptionsPage: globalThis.isVimiumOptionsPage,
+      isExtensionPage,
+      requestedByHelpDialog: globalThis.isVimiumHelpDialog,
     });
   },
 
   // Returns a list of HintDescriptors. Hint descriptors are global. They include all of the
   // information necessary for each frame to determine whether and when a hint from *any* frame is
   // selected.
-  getHintDescriptors({ modeIndex, isVimiumHelpDialog }, _sender) {
+  getHintDescriptors({ modeIndex, requestedByHelpDialog }, _sender) {
     if (!DomUtils.isReady() || DomUtils.windowIsTooSmall()) return [];
 
     const requireHref = [
@@ -336,7 +339,7 @@ const HintCoordinator = {
     // If link hints is launched within the help dialog, then we only offer hints from that frame.
     // This improves the usability of the help dialog on the options page (particularly for
     // selecting command names).
-    if (isVimiumHelpDialog && !globalThis.isVimiumHelpDialog) {
+    if (requestedByHelpDialog && !globalThis.isVimiumHelpDialog) {
       this.localHints = [];
     } else {
       this.localHints = LocalHints.getLocalHints(requireHref, imageMode);
@@ -535,8 +538,8 @@ class LinkHintsMode {
   renderHints() {
     if (this.containerEl == null) {
       const div = DomUtils.createElement("div");
-      div.id = "vimiumHintMarkerContainer";
-      div.className = "vimiumReset";
+      div.id = "vimium-hint-marker-container";
+      div.className = "vimium-reset";
       this.containerEl = div;
       document.documentElement.appendChild(div);
     }
@@ -604,8 +607,9 @@ class LinkHintsMode {
       const el = DomUtils.createElement("div");
       el.style.left = localHint.rect.left + "px";
       el.style.top = localHint.rect.top + "px";
-      // Each hint marker is assigned a different z-index.
-      el.className = "vimiumReset internalVimiumHintMarker vimiumHintMarker";
+      // Note that Vimium's CSS is user-customizable. We're adding the "vimiumHintMarker" class here
+      // for users to customize. See further comments about this in vimium.css.
+      el.className = "vimium-reset internal-vimium-hint-marker vimiumHintMarker";
       Object.assign(marker, {
         element: el,
         localHint,
@@ -1238,7 +1242,7 @@ class FilterHints {
 const spanWrap = (hintString) => {
   const innerHTML = [];
   for (const char of hintString) {
-    innerHTML.push("<span class='vimiumReset'>" + char + "</span>");
+    innerHTML.push("<span class='vimium-reset'>" + char + "</span>");
   }
   return innerHTML.join("");
 };
@@ -1497,7 +1501,9 @@ const LocalHints = {
     stack.push(element);
 
     if (element && element.shadowRoot) {
-      return LocalHints.getElementFromPoint(x, y, element.shadowRoot, stack);
+      // A shadow root can contain just a text node; see #4620. In that case, return the shadow root
+      // itself.
+      return LocalHints.getElementFromPoint(x, y, element.shadowRoot, stack) || element;
     }
 
     return element;
